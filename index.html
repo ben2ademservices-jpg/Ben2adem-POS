@@ -1,475 +1,848 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Ben2adem POS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ben2adem POS</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:Arial,sans-serif;
-      background:#f4f6f8;
-      color:#111;
-    }
-    header{
-      background:#111;
-      color:white;
-      padding:18px;
-      text-align:center;
-      font-size:22px;
-      font-weight:800;
-    }
-    .wrap{
-      max-width:1000px;
-      margin:auto;
-      padding:15px;
-    }
-    .tabs{
-      display:flex;
-      gap:8px;
-      margin-bottom:15px;
-    }
-    .tabs button{
-      flex:1;
-      padding:14px;
-      border:0;
-      border-radius:12px;
-      font-weight:700;
-      background:#ddd;
-    }
-    .tabs button.active{
-      background:#111;
-      color:#fff;
-    }
-    .page{display:none}
-    .page.active{display:block}
-    .card{
-      background:#fff;
-      border-radius:16px;
-      padding:16px;
-      margin-bottom:15px;
-      box-shadow:0 4px 18px #00000010;
-    }
-    h2{margin-top:0}
-    input,select{
-      width:100%;
-      padding:13px;
-      margin:6px 0;
-      border:1px solid #ccc;
-      border-radius:10px;
-      font-size:16px;
-    }
-    button{
-      cursor:pointer;
-      font-size:15px;
-    }
-    .primary{
-      width:100%;
-      padding:14px;
-      background:#111;
-      color:white;
-      border:0;
-      border-radius:10px;
-      font-weight:700;
-      margin-top:7px;
-    }
-    .green{background:#16803b}
-    .red{background:#c62828}
-    .small{
-      padding:8px 10px;
-      border:0;
-      border-radius:8px;
-      color:white;
-      background:#111;
-    }
-    .product{
-      border-bottom:1px solid #eee;
-      padding:12px 0;
-    }
-    .product:last-child{border-bottom:0}
-    .product-title{
-      font-weight:800;
-      font-size:17px;
-    }
-    .muted{
-      color:#777;
-      font-size:13px;
-      margin-top:3px;
-    }
-    .qty-controls{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      margin-top:8px;
-    }
-    .qty-controls button{
-      width:38px;
-      height:34px;
-      border:0;
-      border-radius:8px;
-      background:#111;
-      color:#fff;
-      font-size:18px;
-    }
-    .qty{
-      min-width:45px;
-      text-align:center;
-      font-weight:800;
-    }
-    .cart-item{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      padding:12px 0;
-      border-bottom:1px solid #eee;
-    }
-    .total{
-      font-size:24px;
-      font-weight:900;
-      text-align:right;
-      padding-top:12px;
-    }
-    .status{
-      padding:10px;
-      border-radius:10px;
-      margin-bottom:10px;
-      display:none;
-    }
-    .status.ok{
-      display:block;
-      background:#dff5e5;
-      color:#146c2e;
-    }
-    .status.err{
-      display:block;
-      background:#ffe1e1;
-      color:#a00;
-    }
-    .row{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:8px;
-    }
-    @media(max-width:600px){
-      .row{grid-template-columns:1fr}
-    }
-  </style>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f4f4f6;
+  color:#111;
+}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+
+.topbar{
+  background:#0d0d0d;
+  color:#fff;
+  padding:18px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.brand{font-size:22px;font-weight:900;letter-spacing:1px}
+.langBtn{
+  background:#fff;color:#111;border:0;border-radius:10px;
+  padding:9px 12px;font-weight:800;
+}
+.container{max-width:1050px;margin:auto;padding:18px}
+
+.centerPage{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:linear-gradient(145deg,#050505,#222);
+}
+.loginCard{
+  width:100%;
+  max-width:430px;
+  background:#fff;
+  border-radius:24px;
+  padding:28px;
+  box-shadow:0 20px 60px #0007;
+}
+.logo{
+  text-align:center;
+  font-size:29px;
+  font-weight:900;
+  margin-bottom:5px;
+}
+.sub{
+  text-align:center;
+  color:#777;
+  margin-bottom:25px;
+}
+.roleBtn{
+  width:100%;
+  padding:18px;
+  margin:8px 0;
+  border:0;
+  border-radius:14px;
+  font-size:18px;
+  font-weight:800;
+}
+.adminBtn{background:#111;color:#fff}
+.employeeBtn{background:#e9e9e9;color:#111}
+
+.back{
+  border:0;background:none;
+  font-weight:800;
+  padding:5px 0 15px;
+}
+label{display:block;font-weight:700;margin-top:12px}
+input,select,textarea{
+  width:100%;
+  padding:14px;
+  border:1px solid #ccc;
+  border-radius:12px;
+  margin-top:7px;
+  background:#fff;
+}
+.primary{
+  width:100%;
+  padding:15px;
+  border:0;
+  border-radius:12px;
+  background:#111;
+  color:#fff;
+  font-weight:800;
+  margin-top:16px;
+}
+.green{background:#318341}
+.red{background:#c93636}
+.blue{background:#2878d4}
+.gray{background:#ddd;color:#111}
+
+.error{
+  color:#b00020;
+  margin-top:12px;
+  text-align:center;
+  font-weight:700;
+}
+.success{
+  color:#25813a;
+  margin-top:12px;
+  text-align:center;
+  font-weight:700;
+}
+
+.otpWrap{
+  display:flex;
+  gap:7px;
+  justify-content:center;
+  margin:25px 0;
+}
+.otp{
+  width:46px;
+  height:56px;
+  text-align:center;
+  font-size:25px;
+  font-weight:900;
+  padding:0;
+}
+
+.nav{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding:12px;
+  background:#fff;
+  border-bottom:1px solid #ddd;
+}
+.nav button{
+  border:0;
+  white-space:nowrap;
+  padding:11px 15px;
+  border-radius:10px;
+  background:#eee;
+  font-weight:800;
+}
+.nav button.active{background:#111;color:#fff}
+
+.card{
+  background:#fff;
+  padding:18px;
+  border-radius:18px;
+  margin-bottom:16px;
+  box-shadow:0 4px 18px #0000000d;
+}
+.card h2{margin-top:0}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+}
+.grid3{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+.stat{
+  background:#fff;
+  padding:18px;
+  border-radius:16px;
+  text-align:center;
+}
+.stat strong{font-size:26px;display:block}
+
+.product{
+  border:1px solid #ddd;
+  border-radius:14px;
+  padding:14px;
+  margin:10px 0;
+}
+.productTop{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+}
+.small{font-size:13px;color:#777}
+.qtyControls{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:10px;
+}
+.qtyControls button{
+  border:0;
+  border-radius:8px;
+  padding:8px 13px;
+  font-weight:900;
+}
+.row{
+  display:flex;
+  gap:8px;
+}
+.row>*{flex:1}
+
+.tableWrap{overflow:auto}
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:650px;
+}
+th,td{
+  text-align:left;
+  padding:11px;
+  border-bottom:1px solid #ddd;
+}
+th{background:#f3f3f3}
+
+.badge{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:20px;
+  background:#eee;
+  font-size:12px;
+  font-weight:800;
+}
+.pending{background:#fff1b8}
+.approved{background:#ccefd4}
+.rejected{background:#ffd1d1}
+
+.logout{
+  background:#b72727!important;
+  color:#fff!important;
+}
+.total{
+  font-size:25px;
+  font-weight:900;
+  text-align:right;
+  margin-top:15px;
+}
+@media(max-width:650px){
+  .grid,.grid3{grid-template-columns:1fr}
+  .container{padding:12px}
+  .loginCard{padding:22px}
+}
+</style>
 </head>
 
 <body>
 
-<header>BEN2ADEM POS</header>
+<!-- ROLE PAGE -->
+<section id="rolePage" class="centerPage">
+  <div class="loginCard">
+    <div class="logo">BEN2ADEM POS</div>
+    <div class="sub">Select account type</div>
 
-<div class="wrap">
-
-  <div id="status" class="status"></div>
-
-  <div class="tabs">
-    <button id="inventoryTab" class="active" onclick="openPage('inventory')">
-      Inventory
+    <button class="roleBtn adminBtn" onclick="showPage('adminLogin')">
+      Administrator
     </button>
-    <button id="cashierTab" onclick="openPage('cashier')">
-      Cashier / POS
+
+    <button class="roleBtn employeeBtn" onclick="showPage('employeeLogin')">
+      Employee
     </button>
   </div>
+</section>
 
-  <!-- INVENTORY -->
-  <section id="inventory" class="page active">
+<!-- ADMIN LOGIN -->
+<section id="adminLogin" class="centerPage hidden">
+  <div class="loginCard">
+    <button class="back" onclick="showPage('rolePage')">← Back</button>
+    <div class="logo">Administrator</div>
+    <div class="sub">Ben2adem POS Admin Access</div>
 
-    <div class="card">
-      <h2>Add Product</h2>
+    <label>Email</label>
+    <input id="adminEmail" type="email" autocomplete="off" placeholder="Admin email">
 
-      <input id="productName" placeholder="Product Name">
-      <input id="productBarcode" placeholder="Barcode" inputmode="numeric">
+    <label>Password / Admin Code</label>
+    <input id="adminPassword" type="password" autocomplete="new-password" placeholder="Password or admin code">
 
-      <div class="row">
+    <button class="primary" onclick="adminLogin()">Login</button>
+
+    <div class="small" style="text-align:center;margin-top:15px">
+      Admin barcode/code supported: BEN2ADEM-2026
+    </div>
+
+    <div id="adminError" class="error"></div>
+  </div>
+</section>
+
+<!-- EMPLOYEE LOGIN -->
+<section id="employeeLogin" class="centerPage hidden">
+  <div class="loginCard">
+    <button class="back" onclick="showPage('rolePage')">← Back</button>
+
+    <div class="logo">Employee Login</div>
+    <div class="sub">Enter your employee account</div>
+
+    <form autocomplete="off" onsubmit="employeeLoginStart(event)">
+      <label>Email</label>
+      <input id="employeeEmail" type="email" autocomplete="off" required placeholder="Employee email">
+
+      <label>Password</label>
+      <input id="employeePassword" type="password" autocomplete="new-password" required placeholder="Password">
+
+      <button class="primary" type="submit">Login</button>
+    </form>
+
+    <div id="employeeError" class="error"></div>
+  </div>
+</section>
+
+<!-- OTP PAGE -->
+<section id="otpPage" class="centerPage hidden">
+  <div class="loginCard">
+    <button class="back" onclick="showPage('employeeLogin')">← Back</button>
+
+    <div class="logo">Verify Code</div>
+    <div class="sub">
+      Enter the 6-digit code sent to your email
+    </div>
+
+    <div class="otpWrap">
+      <input class="otp" maxlength="1" inputmode="numeric">
+      <input class="otp" maxlength="1" inputmode="numeric">
+      <input class="otp" maxlength="1" inputmode="numeric">
+      <input class="otp" maxlength="1" inputmode="numeric">
+      <input class="otp" maxlength="1" inputmode="numeric">
+      <input class="otp" maxlength="1" inputmode="numeric">
+    </div>
+
+    <button class="primary" onclick="verifyOTP()">Verify & Open POS</button>
+    <button class="primary gray" onclick="resendOTP()">Resend Code</button>
+
+    <div id="otpMessage"></div>
+  </div>
+</section>
+
+<!-- ADMIN APP -->
+<section id="adminApp" class="hidden">
+  <div class="topbar">
+    <div class="brand">BEN2ADEM POS</div>
+    <div>ADMIN</div>
+  </div>
+
+  <div class="nav">
+    <button onclick="adminTab('dashboard',this)" class="active">Dashboard</button>
+    <button onclick="adminTab('inventory',this)">Inventory</button>
+    <button onclick="adminTab('cashier',this)">Cashier / POS</button>
+    <button onclick="adminTab('employees',this)">Employees</button>
+    <button onclick="adminTab('requests',this)">Edit Requests</button>
+    <button onclick="adminTab('reports',this)">Reports</button>
+    <button onclick="logout()" class="logout">Logout</button>
+  </div>
+
+  <div class="container">
+
+    <div id="dashboard" class="adminSection">
+      <div class="grid3">
+        <div class="stat">
+          <span>Products</span>
+          <strong id="statProducts">0</strong>
+        </div>
+        <div class="stat">
+          <span>Total Stock</span>
+          <strong id="statStock">0</strong>
+        </div>
+        <div class="stat">
+          <span>Employees</span>
+          <strong id="statEmployees">0</strong>
+        </div>
+      </div>
+    </div>
+
+    <div id="inventory" class="adminSection hidden">
+
+      <div class="card">
+        <h2>Add Product</h2>
+
+        <label>Product Name</label>
+        <input id="productName" placeholder="Product name">
+
+        <label>Barcode</label>
+        <input id="productBarcode" placeholder="Scan or enter barcode">
+
+        <label>Quantity</label>
         <input id="productQty" type="number" min="0" placeholder="Quantity">
-        <input id="productPrice" type="number" min="0" step="0.01" placeholder="Selling Price USD">
+
+        <button class="primary green" onclick="addProduct()">Add Product</button>
+        <div id="productMsg"></div>
       </div>
 
-      <button class="primary green" onclick="addProduct()">
-        Add Product
-      </button>
+      <div class="card">
+        <h2>Inventory</h2>
+        <input id="inventorySearch" placeholder="Search name or barcode" oninput="renderProducts()">
+        <div id="productList"></div>
+      </div>
+
     </div>
 
-    <div class="card">
-      <h2>Inventory</h2>
+    <div id="cashier" class="adminSection hidden">
+      <div class="card">
+        <h2>Cashier / POS</h2>
 
-      <input id="inventorySearch"
-             placeholder="Search name or barcode"
-             oninput="renderInventory()">
+        <label>Scan Barcode</label>
+        <input id="adminScan" placeholder="Scan barcode" onkeydown="scanEnter(event,'admin')">
 
-      <div id="inventoryList">Loading...</div>
+        <div id="adminFound"></div>
+      </div>
+
+      <div class="card">
+        <h2>Current Invoice</h2>
+        <div id="adminCart"></div>
+
+        <label>Discount</label>
+        <div class="row">
+          <select id="adminDiscountType" onchange="renderCart('admin')">
+            <option value="none">No Discount</option>
+            <option value="percent">Percentage %</option>
+            <option value="fixed">Fixed USD</option>
+          </select>
+          <input id="adminDiscount" type="number" value="0" min="0" oninput="renderCart('admin')">
+        </div>
+
+        <div id="adminTotal" class="total">$0.00</div>
+        <button class="primary green" onclick="completeSale('admin')">Complete Sale</button>
+        <button class="primary red" onclick="clearCart('admin')">Cancel Current Bill</button>
+      </div>
     </div>
 
-  </section>
+    <div id="employees" class="adminSection hidden">
 
-  <!-- CASHIER -->
-  <section id="cashier" class="page">
+      <div class="card">
+        <h2>Create Employee</h2>
+
+        <label>Full Name</label>
+        <input id="empName">
+
+        <label>Email</label>
+        <input id="empEmail" type="email">
+
+        <label>Username</label>
+        <input id="empUsername">
+
+        <label>Password</label>
+        <input id="empPassword" type="password" autocomplete="new-password">
+
+        <label>Phone</label>
+        <input id="empPhone">
+
+        <label>Position</label>
+        <input id="empPosition">
+
+        <label>Notes</label>
+        <textarea id="empNotes"></textarea>
+
+        <button class="primary green" onclick="createEmployee()">Create Employee</button>
+        <div id="empMsg"></div>
+      </div>
+
+      <div class="card">
+        <h2>Employee Info</h2>
+        <div id="employeeList"></div>
+      </div>
+
+    </div>
+
+    <div id="requests" class="adminSection hidden">
+      <div class="card">
+        <h2>Edit Requests</h2>
+        <div id="requestList"></div>
+      </div>
+    </div>
+
+    <div id="reports" class="adminSection hidden">
+      <div class="card">
+        <h2>Sales Reports</h2>
+        <div id="reportContent"></div>
+      </div>
+
+      <div class="card">
+        <h2>Activity Log</h2>
+        <div id="activityContent"></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- EMPLOYEE POS -->
+<section id="employeeApp" class="hidden">
+  <div class="topbar">
+    <div class="brand">BEN2ADEM POS</div>
+    <div id="employeeTopName">EMPLOYEE</div>
+  </div>
+
+  <div class="nav">
+    <button class="active">Cashier / POS</button>
+    <button onclick="showEmployeeRequests()">My Edit Requests</button>
+    <button onclick="logout()" class="logout">Logout</button>
+  </div>
+
+  <div class="container">
 
     <div class="card">
       <h2>Cashier / POS</h2>
 
-      <input id="scanBarcode"
-             placeholder="Scan / Enter Barcode"
-             inputmode="numeric"
-             autocomplete="off">
+      <label>Scan Barcode</label>
+      <input id="employeeScan" placeholder="Scan barcode" onkeydown="scanEnter(event,'employee')">
 
-      <button class="primary" onclick="scanProduct()">
-        Add Product
-      </button>
+      <div id="employeeFound"></div>
     </div>
 
     <div class="card">
       <h2>Current Invoice</h2>
+      <div id="employeeCart"></div>
 
-      <div id="cart"></div>
-
-      <hr>
-
+      <label>Discount</label>
       <div class="row">
-        <select id="discountType" onchange="renderCart()">
-          <option value="">No Discount</option>
-          <option value="percent">Discount %</option>
-          <option value="fixed">Discount USD</option>
+        <select id="employeeDiscountType" onchange="renderCart('employee')">
+          <option value="none">No Discount</option>
+          <option value="percent">Percentage %</option>
+          <option value="fixed">Fixed USD</option>
         </select>
-
-        <input id="discountValue"
-               type="number"
-               min="0"
-               step="0.01"
-               value="0"
-               oninput="renderCart()">
+        <input id="employeeDiscount" type="number" value="0" min="0" oninput="renderCart('employee')">
       </div>
 
-      <div id="subtotal" class="muted"></div>
-      <div id="discountDisplay" class="muted"></div>
-      <div id="total" class="total">$0.00</div>
+      <div id="employeeTotal" class="total">$0.00</div>
 
-      <button class="primary green" onclick="completeSale()">
-        Complete Sale
-      </button>
-
-      <button class="primary red" onclick="clearCart()">
-        Cancel Current Bill
-      </button>
+      <button class="primary green" onclick="completeSale('employee')">Complete Sale</button>
+      <button class="primary red" onclick="clearCart('employee')">Cancel Current Bill</button>
     </div>
 
-  </section>
+    <div class="card">
+      <h2>Request Product Edit</h2>
 
-</div>
+      <label>Barcode</label>
+      <input id="reqBarcode">
+
+      <label>Requested Change</label>
+      <textarea id="reqChange" placeholder="Example: change price to $5"></textarea>
+
+      <button class="primary blue" onclick="requestEdit()">Send Request To Admin</button>
+      <div id="requestMessage"></div>
+    </div>
+
+  </div>
+</section>
 
 <script>
-const SUPABASE_URL =
-  "https://hzmujxcgeqyvgiqxzrkb.supabase.co";
+const SUPABASE_URL = "https://hzmujxcgeqyvgiqxzrkb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_YY1iXLO9OqOlz10VmWGVtg_VukLMrH4";
 
-const SUPABASE_KEY =
-  "sb_publishable_YY1iXLO9OqOlz10VmWGVtg_VukLMrH4";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const db = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+let products=[];
+let employees=[];
+let currentEmployee=null;
 
-let products = [];
-let cart = [];
+let carts={
+  admin:[],
+  employee:[]
+};
 
-function message(text,type="ok"){
-  const box=document.getElementById("status");
-  box.className="status "+type;
-  box.textContent=text;
-
-  setTimeout(()=>{
-    box.className="status";
-  },3000);
-}
-
-function openPage(page){
-  document.querySelectorAll(".page").forEach(x=>{
-    x.classList.remove("active");
+function showPage(id){
+  [
+    "rolePage",
+    "adminLogin",
+    "employeeLogin",
+    "otpPage",
+    "adminApp",
+    "employeeApp"
+  ].forEach(x=>{
+    const e=document.getElementById(x);
+    if(e)e.classList.add("hidden");
   });
 
-  document.querySelectorAll(".tabs button").forEach(x=>{
-    x.classList.remove("active");
-  });
-
-  document.getElementById(page).classList.add("active");
-
-  if(page==="inventory"){
-    document.getElementById("inventoryTab").classList.add("active");
-  }else{
-    document.getElementById("cashierTab").classList.add("active");
-
-    setTimeout(()=>{
-      document.getElementById("scanBarcode").focus();
-    },200);
-  }
+  document.getElementById(id).classList.remove("hidden");
 }
 
-function cleanBarcode(v){
-  return String(v || "")
-    .replace(/[\r\n\t]/g,"")
+function normalizeBarcode(v){
+  return String(v||"")
+    .replace(/[\r\n\t ]/g,"")
     .trim();
 }
 
-async function loadProducts(){
+/* ADMIN LOGIN */
 
-  const {data,error}=await db
+async function adminLogin(){
+  const pass=document.getElementById("adminPassword").value.trim();
+  const err=document.getElementById("adminError");
+
+  err.textContent="";
+
+  if(pass==="BEN2ADEM-2026"){
+    showPage("adminApp");
+    await loadAll();
+    return;
+  }
+
+  err.textContent="Invalid administrator login.";
+}
+
+/* EMPLOYEE LOGIN */
+
+async function employeeLoginStart(e){
+  e.preventDefault();
+
+  const email=document.getElementById("employeeEmail").value.trim().toLowerCase();
+  const password=document.getElementById("employeePassword").value;
+  const error=document.getElementById("employeeError");
+
+  error.textContent="";
+
+  const {data,error:dbError}=await sb
+    .from("employees")
+    .select("*")
+    .eq("email",email)
+    .eq("active",true)
+    .maybeSingle();
+
+  if(dbError || !data){
+    error.textContent="Employee account not found or disabled.";
+    return;
+  }
+
+  /*
+    Password verification + real email OTP
+    will be moved to secure Supabase Edge Function.
+  */
+
+  currentEmployee=data;
+
+  sessionStorage.setItem("pending_employee",JSON.stringify({
+    id:data.id,
+    email:data.email,
+    full_name:data.full_name
+  }));
+
+  showPage("otpPage");
+  setupOtp();
+}
+
+/* OTP */
+
+function setupOtp(){
+  const inputs=[...document.querySelectorAll(".otp")];
+
+  inputs.forEach((input,index)=>{
+    input.value="";
+
+    input.oninput=()=>{
+      input.value=input.value.replace(/\D/g,"").slice(0,1);
+
+      if(input.value && index<inputs.length-1){
+        inputs[index+1].focus();
+      }
+    };
+
+    input.onkeydown=(e)=>{
+      if(e.key==="Backspace" && !input.value && index>0){
+        inputs[index-1].focus();
+      }
+    };
+  });
+
+  if(inputs[0])inputs[0].focus();
+}
+
+function getOtp(){
+  return [...document.querySelectorAll(".otp")]
+    .map(x=>x.value)
+    .join("");
+}
+
+async function verifyOTP(){
+  const code=getOtp();
+  const msg=document.getElementById("otpMessage");
+
+  if(code.length!==6){
+    msg.className="error";
+    msg.textContent="Enter all 6 digits.";
+    return;
+  }
+
+  /*
+    Temporary UI flow.
+    Real OTP verification will be handled securely
+    by Supabase Edge Function.
+  */
+
+  msg.className="success";
+  msg.textContent="Code entered.";
+
+  showPage("employeeApp");
+
+  if(currentEmployee){
+    document.getElementById("employeeTopName").textContent=
+      currentEmployee.full_name || "EMPLOYEE";
+  }
+
+  await loadProducts();
+}
+
+function resendOTP(){
+  const msg=document.getElementById("otpMessage");
+  msg.className="success";
+  msg.textContent="OTP email service will be connected next.";
+}
+
+/* ADMIN NAV */
+
+function adminTab(id,btn){
+  document.querySelectorAll(".adminSection").forEach(x=>x.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+
+  document.querySelectorAll("#adminApp .nav button").forEach(x=>x.classList.remove("active"));
+  if(btn)btn.classList.add("active");
+
+  if(id==="inventory")loadProducts();
+  if(id==="employees")loadEmployees();
+  if(id==="requests")loadRequests();
+  if(id==="reports")loadReports();
+}
+
+/* LOAD DATA */
+
+async function loadAll(){
+  await loadProducts();
+  await loadEmployees();
+  await loadRequests();
+  await loadReports();
+}
+
+async function loadProducts(){
+  const {data,error}=await sb
     .from("products")
     .select("*")
     .order("created_at",{ascending:false});
 
   if(error){
     console.error(error);
-    message("Database error: "+error.message,"err");
     return;
   }
 
-  products=data || [];
+  products=data||[];
 
-  renderInventory();
+  renderProducts();
+
+  document.getElementById("statProducts").textContent=products.length;
+
+  document.getElementById("statStock").textContent=
+    products.reduce((a,p)=>a+Number(p.quantity||0),0);
 }
 
+/* INVENTORY */
+
 async function addProduct(){
+  const name=document.getElementById("productName").value.trim();
+  const barcode=normalizeBarcode(document.getElementById("productBarcode").value);
+  const quantity=Number(document.getElementById("productQty").value||0);
+  const msg=document.getElementById("productMsg");
 
-  const name=
-    document.getElementById("productName").value.trim();
+  msg.textContent="";
 
-  const barcode=cleanBarcode(
-    document.getElementById("productBarcode").value
-  );
-
-  const quantity=parseInt(
-    document.getElementById("productQty").value || "0"
-  );
-
-  const price=parseFloat(
-    document.getElementById("productPrice").value || "0"
-  );
-
-  if(!name){
-    message("Enter product name","err");
+  if(!name || !barcode){
+    msg.className="error";
+    msg.textContent="Product name and barcode are required.";
     return;
   }
 
-  if(!barcode){
-    message("Enter barcode","err");
-    return;
-  }
-
-  if(quantity<0 || price<0){
-    message("Invalid quantity or price","err");
-    return;
-  }
-
-  const {error}=await db
-    .from("products")
-    .insert({
-      name,
-      barcode,
-      quantity,
-      price
-    });
+  const {error}=await sb.from("products").insert({
+    name,
+    barcode,
+    quantity
+  });
 
   if(error){
-    message(error.message,"err");
+    msg.className="error";
+    msg.textContent=error.message;
     return;
   }
+
+  msg.className="success";
+  msg.textContent="Product added.";
 
   document.getElementById("productName").value="";
   document.getElementById("productBarcode").value="";
   document.getElementById("productQty").value="";
-  document.getElementById("productPrice").value="";
-
-  message("Product added");
 
   await loadProducts();
 }
 
-function renderInventory(){
+function renderProducts(){
+  const box=document.getElementById("productList");
+  if(!box)return;
 
-  const list=document.getElementById("inventoryList");
+  const search=(document.getElementById("inventorySearch")?.value||"").toLowerCase();
 
-  const q=
-    document.getElementById("inventorySearch")
-    .value
-    .toLowerCase()
-    .trim();
-
-  const filtered=products.filter(p=>
-    p.name.toLowerCase().includes(q) ||
-    String(p.barcode).includes(q)
+  const list=products.filter(p=>
+    String(p.name||"").toLowerCase().includes(search) ||
+    String(p.barcode||"").includes(search)
   );
 
-  if(!filtered.length){
-    list.innerHTML="<p>No products found.</p>";
+  if(!list.length){
+    box.innerHTML="<p>No products found.</p>";
     return;
   }
 
-  list.innerHTML=filtered.map(p=>`
-
+  box.innerHTML=list.map(p=>`
     <div class="product">
-
-      <div class="product-title">
-        ${escapeHTML(p.name)}
+      <div class="productTop">
+        <div>
+          <strong>${escapeHtml(p.name)}</strong>
+          <div class="small">${escapeHtml(p.barcode)}</div>
+        </div>
+        <div>
+          <span class="badge">Stock: ${Number(p.quantity||0)}</span>
+        </div>
       </div>
 
-      <div class="muted">
-        Barcode: ${escapeHTML(p.barcode)}
+      <div class="qtyControls">
+        <button onclick="changeStock('${p.id}',-1)">− Qty</button>
+        <strong>${Number(p.quantity||0)}</strong>
+        <button onclick="changeStock('${p.id}',1)">+ Qty</button>
+        <button onclick="deleteProduct('${p.id}')" style="margin-left:auto;background:#ffd5d5">Delete</button>
       </div>
-
-      <div class="muted">
-        Price: $${Number(p.price).toFixed(2)}
-      </div>
-
-      <div class="qty-controls">
-
-        <button onclick="changeStock('${p.id}',-1)">
-          −
-        </button>
-
-        <span class="qty">
-          ${p.quantity}
-        </span>
-
-        <button onclick="changeStock('${p.id}',1)">
-          +
-        </button>
-
-        <button class="small red"
-                onclick="deleteProduct('${p.id}')">
-          Delete
-        </button>
-
-      </div>
-
     </div>
-
   `).join("");
 }
 
-async function changeStock(id,amount){
-
+async function changeStock(id,change){
   const p=products.find(x=>x.id===id);
-
   if(!p)return;
 
-  const newQty=Math.max(
-    0,
-    Number(p.quantity)+amount
-  );
+  const next=Math.max(0,Number(p.quantity||0)+change);
 
-  const {error}=await db
+  const {error}=await sb
     .from("products")
-    .update({quantity:newQty})
+    .update({quantity:next})
     .eq("id",id);
 
   if(error){
-    message(error.message,"err");
+    alert(error.message);
     return;
   }
 
@@ -477,351 +850,589 @@ async function changeStock(id,amount){
 }
 
 async function deleteProduct(id){
-
   if(!confirm("Delete this product?"))return;
 
-  const {error}=await db
+  const {error}=await sb
     .from("products")
     .delete()
     .eq("id",id);
 
   if(error){
-    message(error.message,"err");
+    alert(error.message);
     return;
   }
-
-  message("Product deleted");
 
   await loadProducts();
 }
 
-function scanProduct(){
+/* CASHIER */
 
-  const input=document.getElementById("scanBarcode");
+function scanEnter(e,role){
+  if(e.key!=="Enter")return;
 
-  const barcode=cleanBarcode(input.value);
+  e.preventDefault();
 
-  if(!barcode)return;
+  const input=document.getElementById(role==="admin"?"adminScan":"employeeScan");
+  const barcode=normalizeBarcode(input.value);
 
-  const product=products.find(p=>
-    cleanBarcode(p.barcode)===barcode
-  );
-
-  if(!product){
-    message("Product not found","err");
-    input.select();
-    return;
-  }
-
-  if(Number(product.quantity)<=0){
-    message("Product out of stock","err");
-    input.select();
-    return;
-  }
-
-  const existing=cart.find(x=>
-    x.product_id===product.id
-  );
-
-  if(existing){
-
-    if(existing.quantity>=Number(product.quantity)){
-      message("Not enough stock","err");
-      return;
-    }
-
-    existing.quantity++;
-
-  }else{
-
-    cart.push({
-      product_id:product.id,
-      name:product.name,
-      barcode:product.barcode,
-      price:Number(product.price),
-      quantity:1,
-      stock:Number(product.quantity)
-    });
-
-  }
+  findProduct(barcode,role);
 
   input.value="";
-
-  renderCart();
-
-  input.focus();
 }
 
-function changeCartQty(id,amount){
+async function findProduct(barcode,role){
+  if(!barcode)return;
 
-  const item=cart.find(x=>x.product_id===id);
+  let product=products.find(p=>normalizeBarcode(p.barcode)===barcode);
 
-  if(!item)return;
+  if(!product){
+    const {data}=await sb
+      .from("products")
+      .select("*")
+      .eq("barcode",barcode)
+      .maybeSingle();
 
-  const next=item.quantity+amount;
-
-  if(next<=0){
-    cart=cart.filter(x=>x.product_id!==id);
-  }else if(next<=item.stock){
-    item.quantity=next;
-  }else{
-    message("Not enough stock","err");
+    product=data;
   }
 
-  renderCart();
+  const box=document.getElementById(role==="admin"?"adminFound":"employeeFound");
+
+  if(!product){
+    box.innerHTML='<div class="error">Product not found.</div>';
+    return;
+  }
+
+  box.innerHTML=`
+    <div class="product">
+      <strong>${escapeHtml(product.name)}</strong>
+      <div class="small">Barcode: ${escapeHtml(product.barcode)}</div>
+      <div>Stock: ${Number(product.quantity||0)}</div>
+      <div>Price: $${Number(product.price||0).toFixed(2)}</div>
+      <button class="primary green" onclick="addToCart('${role}','${product.id}')">
+        Add To Invoice
+      </button>
+    </div>
+  `;
 }
 
-function removeCartItem(id){
-  cart=cart.filter(x=>x.product_id!==id);
-  renderCart();
+function addToCart(role,id){
+  const p=products.find(x=>x.id===id);
+  if(!p)return;
+
+  const existing=carts[role].find(x=>x.id===id);
+
+  const cartQty=existing?existing.qty:0;
+
+  if(cartQty>=Number(p.quantity||0)){
+    alert("Not enough stock.");
+    return;
+  }
+
+  if(existing){
+    existing.qty++;
+  }else{
+    carts[role].push({
+      id:p.id,
+      name:p.name,
+      barcode:p.barcode,
+      price:Number(p.price||0),
+      qty:1,
+      stock:Number(p.quantity||0)
+    });
+  }
+
+  renderCart(role);
 }
 
-function calculate(){
+function cartQty(role,id,change){
+  const item=carts[role].find(x=>x.id===id);
+  if(!item)return;
 
-  const subtotal=cart.reduce(
-    (sum,item)=>
-      sum+(item.price*item.quantity),
-    0
-  );
+  if(change>0 && item.qty>=item.stock){
+    alert("Cannot exceed stock.");
+    return;
+  }
 
-  const type=
-    document.getElementById("discountType").value;
+  item.qty+=change;
 
-  const value=parseFloat(
-    document.getElementById("discountValue").value || "0"
-  );
+  if(item.qty<=0){
+    carts[role]=carts[role].filter(x=>x.id!==id);
+  }
+
+  renderCart(role);
+}
+
+function renderCart(role){
+  const box=document.getElementById(role+"Cart");
+  const totalBox=document.getElementById(role+"Total");
+
+  if(!box || !totalBox)return;
+
+  const cart=carts[role];
+
+  if(!cart.length){
+    box.innerHTML="<p>Invoice is empty.</p>";
+    totalBox.textContent="$0.00";
+    return;
+  }
+
+  box.innerHTML=cart.map(i=>`
+    <div class="product">
+      <strong>${escapeHtml(i.name)}</strong>
+      <div class="small">${escapeHtml(i.barcode)}</div>
+
+      <div class="qtyControls">
+        <button onclick="cartQty('${role}','${i.id}',-1)">−</button>
+        <strong>${i.qty}</strong>
+        <button onclick="cartQty('${role}','${i.id}',1)">+</button>
+
+        <span style="margin-left:auto">
+          $${(i.price*i.qty).toFixed(2)}
+        </span>
+      </div>
+    </div>
+  `).join("");
+
+  const totals=calculateTotal(role);
+
+  totalBox.innerHTML=
+    `Subtotal: $${totals.subtotal.toFixed(2)}<br>
+     Discount: $${totals.discount.toFixed(2)}<br>
+     <strong>Final: $${totals.final.toFixed(2)}</strong>`;
+}
+
+function calculateTotal(role){
+  const subtotal=carts[role].reduce((a,i)=>a+(i.price*i.qty),0);
+
+  const type=document.getElementById(role+"DiscountType")?.value||"none";
+  const value=Number(document.getElementById(role+"Discount")?.value||0);
 
   let discount=0;
 
   if(type==="percent"){
-    discount=subtotal*(Math.max(0,value)/100);
+    discount=subtotal*(Math.min(100,value)/100);
   }
 
   if(type==="fixed"){
-    discount=Math.max(0,value);
+    discount=Math.min(subtotal,value);
   }
-
-  discount=Math.min(discount,subtotal);
 
   return{
     subtotal,
     discount,
-    total:subtotal-discount,
-    type,
-    value
+    final:Math.max(0,subtotal-discount)
   };
 }
 
-function renderCart(){
-
-  const box=document.getElementById("cart");
-
-  if(!cart.length){
-
-    box.innerHTML="<p>No items yet.</p>";
-
-  }else{
-
-    box.innerHTML=cart.map(item=>`
-
-      <div class="cart-item">
-
-        <div>
-
-          <b>${escapeHTML(item.name)}</b>
-
-          <div class="muted">
-            ${escapeHTML(item.barcode)}
-          </div>
-
-          <div class="muted">
-            $${item.price.toFixed(2)} each
-          </div>
-
-          <div class="qty-controls">
-
-            <button onclick="changeCartQty('${item.product_id}',-1)">
-              −
-            </button>
-
-            <span class="qty">
-              ${item.quantity}
-            </span>
-
-            <button onclick="changeCartQty('${item.product_id}',1)">
-              +
-            </button>
-
-            <button class="small red"
-                    onclick="removeCartItem('${item.product_id}')">
-              Remove
-            </button>
-
-          </div>
-
-        </div>
-
-        <b>
-          $${(item.price*item.quantity).toFixed(2)}
-        </b>
-
-      </div>
-
-    `).join("");
-
-  }
-
-  const totals=calculate();
-
-  document.getElementById("subtotal").textContent=
-    "Subtotal: $"+totals.subtotal.toFixed(2);
-
-  document.getElementById("discountDisplay").textContent=
-    "Discount: $"+totals.discount.toFixed(2);
-
-  document.getElementById("total").textContent=
-    "$"+totals.total.toFixed(2);
-}
-
-async function completeSale(){
-
-  if(!cart.length){
-    message("Invoice is empty","err");
+async function completeSale(role){
+  if(!carts[role].length){
+    alert("Invoice is empty.");
     return;
   }
 
-  const totals=calculate();
+  const totals=calculateTotal(role);
 
-  for(const item of cart){
+  const cashier=
+    role==="admin"
+      ?"Administrator"
+      :(currentEmployee?.full_name||currentEmployee?.email||"Employee");
 
-    const latest=products.find(
-      p=>p.id===item.product_id
-    );
-
-    if(!latest ||
-       Number(latest.quantity)<item.quantity){
-
-      message(
-        "Not enough stock for "+item.name,
-        "err"
-      );
-
-      return;
-    }
-  }
-
-  const {data:invoice,error:invoiceError}=
-    await db
+  const {data:invoice,error}=await sb
     .from("invoices")
     .insert({
-      cashier_name:"Admin",
+      cashier,
       subtotal:totals.subtotal,
-      discount_type:totals.type || null,
-      discount_value:totals.value,
-      discount_amount:totals.discount,
-      final_total:totals.total
+      discount_type:document.getElementById(role+"DiscountType").value,
+      discount_value:Number(document.getElementById(role+"Discount").value||0),
+      final_total:totals.final
     })
     .select()
     .single();
 
-  if(invoiceError){
-    message(invoiceError.message,"err");
+  if(error){
+    alert(error.message);
     return;
   }
 
-  const invoiceItems=cart.map(item=>({
-    invoice_id:invoice.id,
-    product_id:item.product_id,
-    product_name:item.name,
-    barcode:item.barcode,
-    quantity:item.quantity,
-    unit_price:item.price,
-    line_total:item.price*item.quantity
-  }));
+  for(const item of carts[role]){
+    await sb.from("invoice_items").insert({
+      invoice_id:invoice.id,
+      product_id:item.id,
+      product_name:item.name,
+      barcode:item.barcode,
+      quantity:item.qty,
+      unit_price:item.price,
+      line_total:item.price*item.qty
+    });
 
-  const {error:itemError}=await db
-    .from("invoice_items")
-    .insert(invoiceItems);
+    const newQty=Math.max(0,item.stock-item.qty);
 
-  if(itemError){
-    message(itemError.message,"err");
-    return;
-  }
-
-  for(const item of cart){
-
-    const latest=products.find(
-      p=>p.id===item.product_id
-    );
-
-    const remaining=
-      Number(latest.quantity)-item.quantity;
-
-    const {error}=await db
+    await sb
       .from("products")
-      .update({quantity:remaining})
-      .eq("id",item.product_id);
-
-    if(error){
-      message(error.message,"err");
-      return;
-    }
+      .update({quantity:newQty})
+      .eq("id",item.id);
   }
 
-  const invoiceNumber=invoice.invoice_number;
+  alert("Invoice completed successfully.");
 
-  cart=[];
+  carts[role]=[];
 
-  document.getElementById("discountValue").value="0";
-  document.getElementById("discountType").value="";
+  document.getElementById(role+"Discount").value=0;
+  document.getElementById(role+"DiscountType").value="none";
 
-  renderCart();
+  renderCart(role);
 
   await loadProducts();
-
-  message(
-    "Invoice #"+invoiceNumber+
-    " completed - $"+
-    totals.total.toFixed(2)
-  );
 }
 
-function clearCart(){
+function clearCart(role){
+  if(!carts[role].length)return;
 
-  if(cart.length &&
-     !confirm("Cancel current bill?")){
+  if(!confirm("Cancel current bill?"))return;
+
+  carts[role]=[];
+  renderCart(role);
+}
+
+/* EMPLOYEES */
+
+async function loadEmployees(){
+  const {data,error}=await sb
+    .from("employees")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    console.error(error);
     return;
   }
 
-  cart=[];
+  employees=data||[];
 
-  renderCart();
+  const stat=document.getElementById("statEmployees");
+  if(stat)stat.textContent=employees.length;
 
-  document.getElementById("scanBarcode").value="";
+  renderEmployees();
 }
 
-function escapeHTML(value){
+async function createEmployee(){
+  const employee={
+    full_name:document.getElementById("empName").value.trim(),
+    email:document.getElementById("empEmail").value.trim().toLowerCase(),
+    username:document.getElementById("empUsername").value.trim(),
+    phone:document.getElementById("empPhone").value.trim(),
+    position:document.getElementById("empPosition").value.trim(),
+    notes:document.getElementById("empNotes").value.trim(),
+    password_hash:document.getElementById("empPassword").value,
+    active:true
+  };
 
-  return String(value ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-}
+  const msg=document.getElementById("empMsg");
 
-document.getElementById("scanBarcode")
-.addEventListener("keydown",e=>{
-
-  if(e.key==="Enter"){
-    e.preventDefault();
-    scanProduct();
+  if(!employee.full_name || !employee.email){
+    msg.className="error";
+    msg.textContent="Name and email are required.";
+    return;
   }
 
-});
+  /*
+    Password hashing must be moved to secure Edge Function.
+    Never use plaintext passwords in production.
+  */
 
-renderCart();
-loadProducts();
+  const {error}=await sb.from("employees").insert(employee);
+
+  if(error){
+    msg.className="error";
+    msg.textContent=error.message;
+    return;
+  }
+
+  msg.className="success";
+  msg.textContent="Employee created.";
+
+  [
+    "empName","empEmail","empUsername","empPassword",
+    "empPhone","empPosition","empNotes"
+  ].forEach(id=>document.getElementById(id).value="");
+
+  await loadEmployees();
+}
+
+function renderEmployees(){
+  const box=document.getElementById("employeeList");
+  if(!box)return;
+
+  if(!employees.length){
+    box.innerHTML="<p>No employees.</p>";
+    return;
+  }
+
+  box.innerHTML=employees.map(e=>`
+    <div class="product">
+      <strong>${escapeHtml(e.full_name||"Employee")}</strong>
+      <div>${escapeHtml(e.email||"")}</div>
+      <div class="small">${escapeHtml(e.position||"")}</div>
+
+      <div style="margin-top:10px">
+        <span class="badge">${e.active?"Active":"Disabled"}</span>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button class="primary blue" onclick="editEmployee('${e.id}')">Edit</button>
+        <button class="primary ${e.active?"red":"green"}"
+          onclick="toggleEmployee('${e.id}',${!e.active})">
+          ${e.active?"Disable":"Enable"}
+        </button>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function toggleEmployee(id,value){
+  const {error}=await sb
+    .from("employees")
+    .update({active:value})
+    .eq("id",id);
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
+  await loadEmployees();
+}
+
+async function editEmployee(id){
+  const e=employees.find(x=>x.id===id);
+  if(!e)return;
+
+  const name=prompt("Full Name",e.full_name||"");
+  if(name===null)return;
+
+  const phone=prompt("Phone",e.phone||"");
+  if(phone===null)return;
+
+  const position=prompt("Position",e.position||"");
+  if(position===null)return;
+
+  const {error}=await sb
+    .from("employees")
+    .update({
+      full_name:name.trim(),
+      phone:phone.trim(),
+      position:position.trim()
+    })
+    .eq("id",id);
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
+  await loadEmployees();
+}
+
+/* EDIT REQUESTS */
+
+async function requestEdit(){
+  if(!currentEmployee){
+    alert("Employee session required.");
+    return;
+  }
+
+  const barcode=normalizeBarcode(document.getElementById("reqBarcode").value);
+  const requested_change=document.getElementById("reqChange").value.trim();
+
+  const product=products.find(p=>normalizeBarcode(p.barcode)===barcode);
+
+  const msg=document.getElementById("requestMessage");
+
+  if(!barcode || !requested_change){
+    msg.className="error";
+    msg.textContent="Barcode and requested change are required.";
+    return;
+  }
+
+  const {error}=await sb.from("edit_requests").insert({
+    employee_id:currentEmployee.id,
+    employee_name:currentEmployee.full_name,
+    product_id:product?.id||null,
+    product_name:product?.name||"",
+    barcode,
+    requested_change,
+    status:"pending"
+  });
+
+  if(error){
+    msg.className="error";
+    msg.textContent=error.message;
+    return;
+  }
+
+  msg.className="success";
+  msg.textContent="Request sent to administrator.";
+
+  document.getElementById("reqBarcode").value="";
+  document.getElementById("reqChange").value="";
+}
+
+async function loadRequests(){
+  const {data,error}=await sb
+    .from("edit_requests")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  const box=document.getElementById("requestList");
+
+  if(error){
+    box.innerHTML=`<div class="error">${escapeHtml(error.message)}</div>`;
+    return;
+  }
+
+  if(!data?.length){
+    box.innerHTML="<p>No edit requests.</p>";
+    return;
+  }
+
+  box.innerHTML=data.map(r=>`
+    <div class="product">
+      <strong>${escapeHtml(r.employee_name||"Employee")}</strong>
+      <div>${escapeHtml(r.product_name||r.barcode||"Product")}</div>
+      <div class="small">${escapeHtml(r.requested_change||"")}</div>
+
+      <div style="margin-top:8px">
+        <span class="badge ${r.status}">
+          ${escapeHtml(r.status||"pending")}
+        </span>
+      </div>
+
+      ${r.status==="pending"?`
+        <div class="row">
+          <button class="primary green"
+            onclick="requestDecision('${r.id}','approved')">Approve</button>
+          <button class="primary red"
+            onclick="requestDecision('${r.id}','rejected')">Reject</button>
+        </div>
+      `:""}
+    </div>
+  `).join("");
+}
+
+async function requestDecision(id,status){
+  const {error}=await sb
+    .from("edit_requests")
+    .update({status})
+    .eq("id",id);
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
+  await loadRequests();
+}
+
+function showEmployeeRequests(){
+  alert("Employee request history will be connected in the next update.");
+}
+
+/* REPORTS */
+
+async function loadReports(){
+  const report=document.getElementById("reportContent");
+  const activity=document.getElementById("activityContent");
+
+  const {data:invoices}=await sb
+    .from("invoices")
+    .select("*")
+    .order("created_at",{ascending:false})
+    .limit(100);
+
+  const total=(invoices||[]).reduce((a,i)=>a+Number(i.final_total||0),0);
+
+  report.innerHTML=`
+    <div class="grid">
+      <div class="stat">
+        <span>Invoices</span>
+        <strong>${(invoices||[]).length}</strong>
+      </div>
+      <div class="stat">
+        <span>Sales</span>
+        <strong>$${total.toFixed(2)}</strong>
+      </div>
+    </div>
+
+    <div class="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>Cashier</th>
+            <th>Total</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(invoices||[]).map(i=>`
+            <tr>
+              <td>${escapeHtml(i.invoice_number||i.id)}</td>
+              <td>${escapeHtml(i.cashier||"")}</td>
+              <td>$${Number(i.final_total||0).toFixed(2)}</td>
+              <td>${new Date(i.created_at).toLocaleString()}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const {data:logs}=await sb
+    .from("activity_logs")
+    .select("*")
+    .order("created_at",{ascending:false})
+    .limit(100);
+
+  activity.innerHTML=(logs||[]).length
+    ?logs.map(l=>`
+      <div class="product">
+        <strong>${escapeHtml(l.action||"Activity")}</strong>
+        <div>${escapeHtml(l.employee_name||"")}</div>
+        <div class="small">${new Date(l.created_at).toLocaleString()}</div>
+      </div>
+    `).join("")
+    :"<p>No activity yet.</p>";
+}
+
+/* LOGOUT */
+
+function logout(){
+  currentEmployee=null;
+  sessionStorage.clear();
+
+  document.getElementById("adminPassword").value="";
+  document.getElementById("employeeEmail").value="";
+  document.getElementById("employeePassword").value="";
+
+  carts.admin=[];
+  carts.employee=[];
+
+  showPage("rolePage");
+}
+
+/* HELPERS */
+
+function escapeHtml(value){
+  return String(value??"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+renderCart("admin");
+renderCart("employee");
 </script>
 
 </body>
