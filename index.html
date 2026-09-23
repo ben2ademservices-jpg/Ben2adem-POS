@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Ben2adem POS</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      background:#f4f6f8;
+      color:#111;
+    }
+    header{
+      background:#111;
+      color:white;
+      padding:18px;
+      text-align:center;
+      font-size:22px;
+      font-weight:800;
+    }
+    .wrap{
+      max-width:1000px;
+      margin:auto;
+      padding:15px;
+    }
+    .tabs{
+      display:flex;
+      gap:8px;
+      margin-bottom:15px;
+    }
+    .tabs button{
+      flex:1;
+      padding:14px;
+      border:0;
+      border-radius:12px;
+      font-weight:700;
+      background:#ddd;
+    }
+    .tabs button.active{
+      background:#111;
+      color:#fff;
+    }
+    .page{display:none}
+    .page.active{display:block}
+    .card{
+      background:#fff;
+      border-radius:16px;
+      padding:16px;
+      margin-bottom:15px;
+      box-shadow:0 4px 18px #00000010;
+    }
+    h2{margin-top:0}
+    input,select{
+      width:100%;
+      padding:13px;
+      margin:6px 0;
+      border:1px solid #ccc;
+      border-radius:10px;
+      font-size:16px;
+    }
+    button{
+      cursor:pointer;
+      font-size:15px;
+    }
+    .primary{
+      width:100%;
+      padding:14px;
+      background:#111;
+      color:white;
+      border:0;
+      border-radius:10px;
+      font-weight:700;
+      margin-top:7px;
+    }
+    .green{background:#16803b}
+    .red{background:#c62828}
+    .small{
+      padding:8px 10px;
+      border:0;
+      border-radius:8px;
+      color:white;
+      background:#111;
+    }
+    .product{
+      border-bottom:1px solid #eee;
+      padding:12px 0;
+    }
+    .product:last-child{border-bottom:0}
+    .product-title{
+      font-weight:800;
+      font-size:17px;
+    }
+    .muted{
+      color:#777;
+      font-size:13px;
+      margin-top:3px;
+    }
+    .qty-controls{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-top:8px;
+    }
+    .qty-controls button{
+      width:38px;
+      height:34px;
+      border:0;
+      border-radius:8px;
+      background:#111;
+      color:#fff;
+      font-size:18px;
+    }
+    .qty{
+      min-width:45px;
+      text-align:center;
+      font-weight:800;
+    }
+    .cart-item{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 0;
+      border-bottom:1px solid #eee;
+    }
+    .total{
+      font-size:24px;
+      font-weight:900;
+      text-align:right;
+      padding-top:12px;
+    }
+    .status{
+      padding:10px;
+      border-radius:10px;
+      margin-bottom:10px;
+      display:none;
+    }
+    .status.ok{
+      display:block;
+      background:#dff5e5;
+      color:#146c2e;
+    }
+    .status.err{
+      display:block;
+      background:#ffe1e1;
+      color:#a00;
+    }
+    .row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+    @media(max-width:600px){
+      .row{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+
+<body>
+
+<header>BEN2ADEM POS</header>
+
+<div class="wrap">
+
+  <div id="status" class="status"></div>
+
+  <div class="tabs">
+    <button id="inventoryTab" class="active" onclick="openPage('inventory')">
+      Inventory
+    </button>
+    <button id="cashierTab" onclick="openPage('cashier')">
+      Cashier / POS
+    </button>
+  </div>
+
+  <!-- INVENTORY -->
+  <section id="inventory" class="page active">
+
+    <div class="card">
+      <h2>Add Product</h2>
+
+      <input id="productName" placeholder="Product Name">
+      <input id="productBarcode" placeholder="Barcode" inputmode="numeric">
+
+      <div class="row">
+        <input id="productQty" type="number" min="0" placeholder="Quantity">
+        <input id="productPrice" type="number" min="0" step="0.01" placeholder="Selling Price USD">
+      </div>
+
+      <button class="primary green" onclick="addProduct()">
+        Add Product
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>Inventory</h2>
+
+      <input id="inventorySearch"
+             placeholder="Search name or barcode"
+             oninput="renderInventory()">
+
+      <div id="inventoryList">Loading...</div>
+    </div>
+
+  </section>
+
+  <!-- CASHIER -->
+  <section id="cashier" class="page">
+
+    <div class="card">
+      <h2>Cashier / POS</h2>
+
+      <input id="scanBarcode"
+             placeholder="Scan / Enter Barcode"
+             inputmode="numeric"
+             autocomplete="off">
+
+      <button class="primary" onclick="scanProduct()">
+        Add Product
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>Current Invoice</h2>
+
+      <div id="cart"></div>
+
+      <hr>
+
+      <div class="row">
+        <select id="discountType" onchange="renderCart()">
+          <option value="">No Discount</option>
+          <option value="percent">Discount %</option>
+          <option value="fixed">Discount USD</option>
+        </select>
+
+        <input id="discountValue"
+               type="number"
+               min="0"
+               step="0.01"
+               value="0"
+               oninput="renderCart()">
+      </div>
+
+      <div id="subtotal" class="muted"></div>
+      <div id="discountDisplay" class="muted"></div>
+      <div id="total" class="total">$0.00</div>
+
+      <button class="primary green" onclick="completeSale()">
+        Complete Sale
+      </button>
+
+      <button class="primary red" onclick="clearCart()">
+        Cancel Current Bill
+      </button>
+    </div>
+
+  </section>
+
+</div>
+
+<script>
+const SUPABASE_URL =
+  "https://hzmujxcgeqyvgiqxzrkb.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_YY1iXLO9OqOlz10VmWGVtg_VukLMrH4";
+
+const db = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+let products = [];
+let cart = [];
+
+function message(text,type="ok"){
+  const box=document.getElementById("status");
+  box.className="status "+type;
+  box.textContent=text;
+
+  setTimeout(()=>{
+    box.className="status";
+  },3000);
+}
+
+function openPage(page){
+  document.querySelectorAll(".page").forEach(x=>{
+    x.classList.remove("active");
+  });
+
+  document.querySelectorAll(".tabs button").forEach(x=>{
+    x.classList.remove("active");
+  });
+
+  document.getElementById(page).classList.add("active");
+
+  if(page==="inventory"){
+    document.getElementById("inventoryTab").classList.add("active");
+  }else{
+    document.getElementById("cashierTab").classList.add("active");
+
+    setTimeout(()=>{
+      document.getElementById("scanBarcode").focus();
+    },200);
+  }
+}
+
+function cleanBarcode(v){
+  return String(v || "")
+    .replace(/[\r\n\t]/g,"")
+    .trim();
+}
+
+async function loadProducts(){
+
+  const {data,error}=await db
+    .from("products")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    console.error(error);
+    message("Database error: "+error.message,"err");
+    return;
+  }
+
+  products=data || [];
+
+  renderInventory();
+}
+
+async function addProduct(){
+
+  const name=
+    document.getElementById("productName").value.trim();
+
+  const barcode=cleanBarcode(
+    document.getElementById("productBarcode").value
+  );
+
+  const quantity=parseInt(
+    document.getElementById("productQty").value || "0"
+  );
+
+  const price=parseFloat(
+    document.getElementById("productPrice").value || "0"
+  );
+
+  if(!name){
+    message("Enter product name","err");
+    return;
+  }
+
+  if(!barcode){
+    message("Enter barcode","err");
+    return;
+  }
+
+  if(quantity<0 || price<0){
+    message("Invalid quantity or price","err");
+    return;
+  }
+
+  const {error}=await db
+    .from("products")
+    .insert({
+      name,
+      barcode,
+      quantity,
+      price
+    });
+
+  if(error){
+    message(error.message,"err");
+    return;
+  }
+
+  document.getElementById("productName").value="";
+  document.getElementById("productBarcode").value="";
+  document.getElementById("productQty").value="";
+  document.getElementById("productPrice").value="";
+
+  message("Product added");
+
+  await loadProducts();
+}
+
+function renderInventory(){
+
+  const list=document.getElementById("inventoryList");
+
+  const q=
+    document.getElementById("inventorySearch")
+    .value
+    .toLowerCase()
+    .trim();
+
+  const filtered=products.filter(p=>
+    p.name.toLowerCase().includes(q) ||
+    String(p.barcode).includes(q)
+  );
+
+  if(!filtered.length){
+    list.innerHTML="<p>No products found.</p>";
+    return;
+  }
+
+  list.innerHTML=filtered.map(p=>`
+
+    <div class="product">
+
+      <div class="product-title">
+        ${escapeHTML(p.name)}
+      </div>
+
+      <div class="muted">
+        Barcode: ${escapeHTML(p.barcode)}
+      </div>
+
+      <div class="muted">
+        Price: $${Number(p.price).toFixed(2)}
+      </div>
+
+      <div class="qty-controls">
+
+        <button onclick="changeStock('${p.id}',-1)">
+          −
+        </button>
+
+        <span class="qty">
+          ${p.quantity}
+        </span>
+
+        <button onclick="changeStock('${p.id}',1)">
+          +
+        </button>
+
+        <button class="small red"
+                onclick="deleteProduct('${p.id}')">
+          Delete
+        </button>
+
+      </div>
+
+    </div>
+
+  `).join("");
+}
+
+async function changeStock(id,amount){
+
+  const p=products.find(x=>x.id===id);
+
+  if(!p)return;
+
+  const newQty=Math.max(
+    0,
+    Number(p.quantity)+amount
+  );
+
+  const {error}=await db
+    .from("products")
+    .update({quantity:newQty})
+    .eq("id",id);
+
+  if(error){
+    message(error.message,"err");
+    return;
+  }
+
+  await loadProducts();
+}
+
+async function deleteProduct(id){
+
+  if(!confirm("Delete this product?"))return;
+
+  const {error}=await db
+    .from("products")
+    .delete()
+    .eq("id",id);
+
+  if(error){
+    message(error.message,"err");
+    return;
+  }
+
+  message("Product deleted");
+
+  await loadProducts();
+}
+
+function scanProduct(){
+
+  const input=document.getElementById("scanBarcode");
+
+  const barcode=cleanBarcode(input.value);
+
+  if(!barcode)return;
+
+  const product=products.find(p=>
+    cleanBarcode(p.barcode)===barcode
+  );
+
+  if(!product){
+    message("Product not found","err");
+    input.select();
+    return;
+  }
+
+  if(Number(product.quantity)<=0){
+    message("Product out of stock","err");
+    input.select();
+    return;
+  }
+
+  const existing=cart.find(x=>
+    x.product_id===product.id
+  );
+
+  if(existing){
+
+    if(existing.quantity>=Number(product.quantity)){
+      message("Not enough stock","err");
+      return;
+    }
+
+    existing.quantity++;
+
+  }else{
+
+    cart.push({
+      product_id:product.id,
+      name:product.name,
+      barcode:product.barcode,
+      price:Number(product.price),
+      quantity:1,
+      stock:Number(product.quantity)
+    });
+
+  }
+
+  input.value="";
+
+  renderCart();
+
+  input.focus();
+}
+
+function changeCartQty(id,amount){
+
+  const item=cart.find(x=>x.product_id===id);
+
+  if(!item)return;
+
+  const next=item.quantity+amount;
+
+  if(next<=0){
+    cart=cart.filter(x=>x.product_id!==id);
+  }else if(next<=item.stock){
+    item.quantity=next;
+  }else{
+    message("Not enough stock","err");
+  }
+
+  renderCart();
+}
+
+function removeCartItem(id){
+  cart=cart.filter(x=>x.product_id!==id);
+  renderCart();
+}
+
+function calculate(){
+
+  const subtotal=cart.reduce(
+    (sum,item)=>
+      sum+(item.price*item.quantity),
+    0
+  );
+
+  const type=
+    document.getElementById("discountType").value;
+
+  const value=parseFloat(
+    document.getElementById("discountValue").value || "0"
+  );
+
+  let discount=0;
+
+  if(type==="percent"){
+    discount=subtotal*(Math.max(0,value)/100);
+  }
+
+  if(type==="fixed"){
+    discount=Math.max(0,value);
+  }
+
+  discount=Math.min(discount,subtotal);
+
+  return{
+    subtotal,
+    discount,
+    total:subtotal-discount,
+    type,
+    value
+  };
+}
+
+function renderCart(){
+
+  const box=document.getElementById("cart");
+
+  if(!cart.length){
+
+    box.innerHTML="<p>No items yet.</p>";
+
+  }else{
+
+    box.innerHTML=cart.map(item=>`
+
+      <div class="cart-item">
+
+        <div>
+
+          <b>${escapeHTML(item.name)}</b>
+
+          <div class="muted">
+            ${escapeHTML(item.barcode)}
+          </div>
+
+          <div class="muted">
+            $${item.price.toFixed(2)} each
+          </div>
+
+          <div class="qty-controls">
+
+            <button onclick="changeCartQty('${item.product_id}',-1)">
+              −
+            </button>
+
+            <span class="qty">
+              ${item.quantity}
+            </span>
+
+            <button onclick="changeCartQty('${item.product_id}',1)">
+              +
+            </button>
+
+            <button class="small red"
+                    onclick="removeCartItem('${item.product_id}')">
+              Remove
+            </button>
+
+          </div>
+
+        </div>
+
+        <b>
+          $${(item.price*item.quantity).toFixed(2)}
+        </b>
+
+      </div>
+
+    `).join("");
+
+  }
+
+  const totals=calculate();
+
+  document.getElementById("subtotal").textContent=
+    "Subtotal: $"+totals.subtotal.toFixed(2);
+
+  document.getElementById("discountDisplay").textContent=
+    "Discount: $"+totals.discount.toFixed(2);
+
+  document.getElementById("total").textContent=
+    "$"+totals.total.toFixed(2);
+}
+
+async function completeSale(){
+
+  if(!cart.length){
+    message("Invoice is empty","err");
+    return;
+  }
+
+  const totals=calculate();
+
+  for(const item of cart){
+
+    const latest=products.find(
+      p=>p.id===item.product_id
+    );
+
+    if(!latest ||
+       Number(latest.quantity)<item.quantity){
+
+      message(
+        "Not enough stock for "+item.name,
+        "err"
+      );
+
+      return;
+    }
+  }
+
+  const {data:invoice,error:invoiceError}=
+    await db
+    .from("invoices")
+    .insert({
+      cashier_name:"Admin",
+      subtotal:totals.subtotal,
+      discount_type:totals.type || null,
+      discount_value:totals.value,
+      discount_amount:totals.discount,
+      final_total:totals.total
+    })
+    .select()
+    .single();
+
+  if(invoiceError){
+    message(invoiceError.message,"err");
+    return;
+  }
+
+  const invoiceItems=cart.map(item=>({
+    invoice_id:invoice.id,
+    product_id:item.product_id,
+    product_name:item.name,
+    barcode:item.barcode,
+    quantity:item.quantity,
+    unit_price:item.price,
+    line_total:item.price*item.quantity
+  }));
+
+  const {error:itemError}=await db
+    .from("invoice_items")
+    .insert(invoiceItems);
+
+  if(itemError){
+    message(itemError.message,"err");
+    return;
+  }
+
+  for(const item of cart){
+
+    const latest=products.find(
+      p=>p.id===item.product_id
+    );
+
+    const remaining=
+      Number(latest.quantity)-item.quantity;
+
+    const {error}=await db
+      .from("products")
+      .update({quantity:remaining})
+      .eq("id",item.product_id);
+
+    if(error){
+      message(error.message,"err");
+      return;
+    }
+  }
+
+  const invoiceNumber=invoice.invoice_number;
+
+  cart=[];
+
+  document.getElementById("discountValue").value="0";
+  document.getElementById("discountType").value="";
+
+  renderCart();
+
+  await loadProducts();
+
+  message(
+    "Invoice #"+invoiceNumber+
+    " completed - $"+
+    totals.total.toFixed(2)
+  );
+}
+
+function clearCart(){
+
+  if(cart.length &&
+     !confirm("Cancel current bill?")){
+    return;
+  }
+
+  cart=[];
+
+  renderCart();
+
+  document.getElementById("scanBarcode").value="";
+}
+
+function escapeHTML(value){
+
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+document.getElementById("scanBarcode")
+.addEventListener("keydown",e=>{
+
+  if(e.key==="Enter"){
+    e.preventDefault();
+    scanProduct();
+  }
+
+});
+
+renderCart();
+loadProducts();
+</script>
+
+</body>
+</html>
