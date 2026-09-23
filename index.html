@@ -1,1439 +1,967 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Ben2adem POS</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ben2adem Inventory System - Mobile</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f5f6f8;color:#17202a}.wrap{max-width:1100px;margin:auto;padding:24px}
+h1{margin:0 0 6px}.sub{color:#68717c}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0}.card{background:#fff;border:1px solid #e2e5e9;border-radius:14px;padding:18px}.num{font-size:28px;font-weight:700;margin-top:6px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}button{border:0;border-radius:10px;padding:12px 16px;background:#17202a;color:white;cursor:pointer}button.secondary{background:#e9edf1;color:#17202a}.tabbtn{display:inline-block;text-decoration:none;border:0;border-radius:10px;padding:12px 16px;background:#17202a;color:white;cursor:pointer}.tabbtn.secondary{background:#e9edf1;color:#17202a}
+form{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}input{padding:12px;border:1px solid #ccd2d8;border-radius:9px;font-size:15px;box-sizing:border-box;width:100%}.full{grid-column:1/-1}
+table{width:100%;border-collapse:collapse;margin-top:10px}th,td{text-align:left;padding:11px 8px;border-bottom:1px solid #e5e7eb}th{background:#f8f9fa}.scroll{overflow:auto}.hidden{display:none}.bad{font-weight:bold}.msg{margin-top:10px;color:#59636e}
+@media(max-width:650px){.cards{grid-template-columns:1fr}form{grid-template-columns:1fr}.full{grid-column:auto}}
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+/* EMPLOYEE 2FA REAL FIX: this overlay must sit ABOVE the login screen */
+#employeeOtpModal{position:fixed!important;inset:0!important;z-index:1000001!important;background:rgba(4,15,30,.78)!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:20px!important}
+#employeeOtpModal.hidden{display:none!important}
+#employeeOtpModal .modal-box{background:#fff!important;width:min(460px,100%)!important;border-radius:18px!important;padding:24px!important;box-shadow:0 25px 80px rgba(0,0,0,.45)!important}
+#employeeOtpModal input{width:100%!important;box-sizing:border-box!important;margin:14px 0 8px!important;min-height:58px!important}
+#employeeOtpModal button{width:100%!important}
+</style>
 
 <style>
+#app{display:block}
+</style>
+
+<style id="desktop-redesign">
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#f4f4f6;
-  color:#111;
-}
-button,input,select,textarea{font:inherit}
-button{cursor:pointer}
-.hidden{display:none!important}
+html,body{margin:0;padding:0;min-width:0;background:#f4f7fb;color:#17202a;font-family:Arial,Helvetica,sans-serif}
+body{overflow-x:auto}
+.wrap{width:100%;max-width:none;margin:0;padding:0 20px 22px}
+#app>.wrap{padding-top:0}
+h1,.sub{margin:0}
+.site-header{height:108px;background:linear-gradient(100deg,#071a35,#06152d);color:#fff;display:flex;align-items:center;padding:0 38px;gap:30px;border-bottom:1px solid #173762}
+.brand{font-size:42px;font-weight:800;letter-spacing:-2px;line-height:1}
+.brand .two{color:#159df5}
+.brand-mark{width:1px;height:58px;background:#6d7d94;margin-left:4px}
+.header-title{font-size:29px;font-weight:700}
+.header-subtitle{font-size:17px;margin-top:5px;color:#d9e3ef}
+.header-right{margin-left:auto;font-size:18px;font-weight:700;color:#16a2f7;display:flex;align-items:center;gap:12px}
+.header-icon{font-size:29px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin:28px 0 22px}
+.cards .card{min-height:142px;background:#fff;border:1px solid #dce4ee;border-radius:12px;padding:27px 30px;display:flex;flex-direction:column;justify-content:center;box-shadow:0 2px 8px rgba(20,45,75,.05)}
+.cards .card:nth-child(1){background:linear-gradient(110deg,#f3f8ff,#fbfdff)}
+.cards .card:nth-child(2){background:linear-gradient(110deg,#fffdf6,#fffaf0)}
+.cards .card:nth-child(3){background:linear-gradient(110deg,#f7fcf7,#fbfffb)}
+.cards .card::before{font-size:38px;float:left;margin-right:18px}
+.cards .card:nth-child(1)::before{content:"▣";color:#1769e0}
+.cards .card:nth-child(2)::before{content:"↘";color:#f5a900}
+.cards .card:nth-child(3)::before{content:"↕";color:#159447}
+.cards .num{font-size:38px;font-weight:800;margin-top:8px}
+.cards .card:nth-child(3) .num{color:#d32f2f}
+.tabs{display:none}
+.card{background:#fff;border:1px solid #dce4ee;border-radius:12px;box-shadow:0 2px 8px rgba(20,45,75,.04)}
+#add,#count,#report{padding:0;overflow:hidden}
+#add h3,#count h3,#report h3,.inventory-all h3{margin:0;background:linear-gradient(100deg,#071a35,#09244a);color:#fff;padding:16px 20px;font-size:19px;line-height:1}
+#add form,#count form{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:15px}
+#add .full,#count .full{grid-column:1/-1}
+input,textarea{padding:14px 15px;border:1px solid #ccd5e0;border-radius:8px;font-size:15px;background:#fff}
+textarea{border:1px solid #ccd5e0;border-radius:8px;min-height:90px;resize:vertical;font-family:Arial,sans-serif}
+button{border:0;border-radius:8px;padding:13px 16px;background:#1769e0;color:white;cursor:pointer;font-weight:700;font-size:15px}
+#count button{background:#14a957}
+.msg{margin:0 20px 18px;padding:12px;border-radius:8px;background:#eef6ff;color:#1358a6}
+.main-grid{display:grid;grid-template-columns:1.05fr .92fr 1.28fr;gap:14px;margin-bottom:16px}
+#report .scroll{padding:0 12px 15px}
+table{width:100%;border-collapse:separate;border-spacing:0;margin-top:0}
+th,td{padding:13px 11px;border-bottom:1px solid #e5eaf0;font-size:14px;white-space:nowrap}
+th{background:#f7f9fc;color:#27364b;font-weight:700}
+tbody tr:last-child td{border-bottom:0}
+#report table th,#report table td{text-align:left}
+#report table td:nth-child(5){font-weight:700}
+.inventory-all{padding:0;overflow:hidden;margin-top:0}
+.inventory-all .scroll{padding:0 0 4px}
+.inventory-all table th,.inventory-all table td{padding:14px 20px}
+.bad{color:#d32f2f;font-weight:700}
+footer.system-footer{background:#071a35;color:#fff;margin:20px -20px -22px;padding:22px 30px;text-align:center;font-size:14px}
+footer.system-footer strong{color:#22a7ff}
 
-.topbar{
-  background:#0d0d0d;
-  color:#fff;
-  padding:18px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.brand{font-size:22px;font-weight:900;letter-spacing:1px}
-.langBtn{
-  background:#fff;color:#111;border:0;border-radius:10px;
-  padding:9px 12px;font-weight:800;
-}
-.container{max-width:1050px;margin:auto;padding:18px}
-
-.centerPage{
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  background:linear-gradient(145deg,#050505,#222);
-}
-.loginCard{
-  width:100%;
-  max-width:430px;
-  background:#fff;
-  border-radius:24px;
-  padding:28px;
-  box-shadow:0 20px 60px #0007;
-}
-.logo{
-  text-align:center;
-  font-size:29px;
-  font-weight:900;
-  margin-bottom:5px;
-}
-.sub{
-  text-align:center;
-  color:#777;
-  margin-bottom:25px;
-}
-.roleBtn{
-  width:100%;
-  padding:18px;
-  margin:8px 0;
-  border:0;
-  border-radius:14px;
-  font-size:18px;
-  font-weight:800;
-}
-.adminBtn{background:#111;color:#fff}
-.employeeBtn{background:#e9e9e9;color:#111}
-
-.back{
-  border:0;background:none;
-  font-weight:800;
-  padding:5px 0 15px;
-}
-label{display:block;font-weight:700;margin-top:12px}
-input,select,textarea{
-  width:100%;
-  padding:14px;
-  border:1px solid #ccc;
-  border-radius:12px;
-  margin-top:7px;
-  background:#fff;
-}
-.primary{
-  width:100%;
-  padding:15px;
-  border:0;
-  border-radius:12px;
-  background:#111;
-  color:#fff;
-  font-weight:800;
-  margin-top:16px;
-}
-.green{background:#318341}
-.red{background:#c93636}
-.blue{background:#2878d4}
-.gray{background:#ddd;color:#111}
-
-.error{
-  color:#b00020;
-  margin-top:12px;
-  text-align:center;
-  font-weight:700;
-}
-.success{
-  color:#25813a;
-  margin-top:12px;
-  text-align:center;
-  font-weight:700;
-}
-
-.otpWrap{
-  display:flex;
-  gap:7px;
-  justify-content:center;
-  margin:25px 0;
-}
-.otp{
-  width:46px;
-  height:56px;
-  text-align:center;
-  font-size:25px;
-  font-weight:900;
-  padding:0;
-}
-
-.nav{
-  display:flex;
-  gap:8px;
-  overflow-x:auto;
-  padding:12px;
-  background:#fff;
-  border-bottom:1px solid #ddd;
-}
-.nav button{
-  border:0;
-  white-space:nowrap;
-  padding:11px 15px;
-  border-radius:10px;
-  background:#eee;
-  font-weight:800;
-}
-.nav button.active{background:#111;color:#fff}
-
-.card{
-  background:#fff;
-  padding:18px;
-  border-radius:18px;
-  margin-bottom:16px;
-  box-shadow:0 4px 18px #0000000d;
-}
-.card h2{margin-top:0}
-
-.grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:12px;
-}
-.grid3{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:12px;
-}
-.stat{
-  background:#fff;
-  padding:18px;
-  border-radius:16px;
-  text-align:center;
-}
-.stat strong{font-size:26px;display:block}
-
-.product{
-  border:1px solid #ddd;
-  border-radius:14px;
-  padding:14px;
-  margin:10px 0;
-}
-.productTop{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-}
-.small{font-size:13px;color:#777}
-.qtyControls{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin-top:10px;
-}
-.qtyControls button{
-  border:0;
-  border-radius:8px;
-  padding:8px 13px;
-  font-weight:900;
-}
-.row{
-  display:flex;
-  gap:8px;
-}
-.row>*{flex:1}
-
-.tableWrap{overflow:auto}
-table{
-  width:100%;
-  border-collapse:collapse;
-  min-width:650px;
-}
-th,td{
-  text-align:left;
-  padding:11px;
-  border-bottom:1px solid #ddd;
-}
-th{background:#f3f3f3}
-
-.badge{
-  display:inline-block;
-  padding:5px 9px;
-  border-radius:20px;
-  background:#eee;
-  font-size:12px;
-  font-weight:800;
-}
-.pending{background:#fff1b8}
-.approved{background:#ccefd4}
-.rejected{background:#ffd1d1}
-
-.logout{
-  background:#b72727!important;
-  color:#fff!important;
-}
-.total{
-  font-size:25px;
-  font-weight:900;
-  text-align:right;
-  margin-top:15px;
-}
-@media(max-width:650px){
-  .grid,.grid3{grid-template-columns:1fr}
-  .container{padding:12px}
-  .loginCard{padding:22px}
 }
 </style>
-</head>
 
-<body>
 
-<!-- ROLE PAGE -->
-<section id="rolePage" class="centerPage">
-  <div class="loginCard">
-    <div class="logo">BEN2ADEM POS</div>
-    <div class="sub">Select account type</div>
-
-    <button class="roleBtn adminBtn" onclick="showPage('adminLogin')">
-      Administrator
-    </button>
-
-    <button class="roleBtn employeeBtn" onclick="showPage('employeeLogin')">
-      Employee
-    </button>
-  </div>
-</section>
-
-<!-- ADMIN LOGIN -->
-<section id="adminLogin" class="centerPage hidden">
-  <div class="loginCard">
-    <button class="back" onclick="showPage('rolePage')">← Back</button>
-    <div class="logo">Administrator</div>
-    <div class="sub">Ben2adem POS Admin Access</div>
-
-    <label>Email</label>
-    <input id="adminEmail" type="email" autocomplete="off" placeholder="Admin email">
-
-    <label>Password / Admin Code</label>
-    <input id="adminPassword" type="password" autocomplete="new-password" placeholder="Password or admin code">
-
-    <button class="primary" onclick="adminLogin()">Login</button>
-
-    <div class="small" style="text-align:center;margin-top:15px">
-      Admin barcode/code supported: BEN2ADEM-2026
-    </div>
-
-    <div id="adminError" class="error"></div>
-  </div>
-</section>
-
-<!-- EMPLOYEE LOGIN -->
-<section id="employeeLogin" class="centerPage hidden">
-  <div class="loginCard">
-    <button class="back" onclick="showPage('rolePage')">← Back</button>
-
-    <div class="logo">Employee Login</div>
-    <div class="sub">Enter your employee account</div>
-
-    <form autocomplete="off" onsubmit="employeeLoginStart(event)">
-      <label>Email</label>
-      <input id="employeeEmail" type="email" autocomplete="off" required placeholder="Employee email">
-
-      <label>Password</label>
-      <input id="employeePassword" type="password" autocomplete="new-password" required placeholder="Password">
-
-      <button class="primary" type="submit">Login</button>
-    </form>
-
-    <div id="employeeError" class="error"></div>
-  </div>
-</section>
-
-<!-- OTP PAGE -->
-<section id="otpPage" class="centerPage hidden">
-  <div class="loginCard">
-    <button class="back" onclick="showPage('employeeLogin')">← Back</button>
-
-    <div class="logo">Verify Code</div>
-    <div class="sub">
-      Enter the 6-digit code sent to your email
-    </div>
-
-    <div class="otpWrap">
-      <input class="otp" maxlength="1" inputmode="numeric">
-      <input class="otp" maxlength="1" inputmode="numeric">
-      <input class="otp" maxlength="1" inputmode="numeric">
-      <input class="otp" maxlength="1" inputmode="numeric">
-      <input class="otp" maxlength="1" inputmode="numeric">
-      <input class="otp" maxlength="1" inputmode="numeric">
-    </div>
-
-    <button class="primary" onclick="verifyOTP()">Verify & Open POS</button>
-    <button class="primary gray" onclick="resendOTP()">Resend Code</button>
-
-    <div id="otpMessage"></div>
-  </div>
-</section>
-
-<!-- ADMIN APP -->
-<section id="adminApp" class="hidden">
-  <div class="topbar">
-    <div class="brand">BEN2ADEM POS</div>
-    <div>ADMIN</div>
-  </div>
-
-  <div class="nav">
-    <button onclick="adminTab('dashboard',this)" class="active">Dashboard</button>
-    <button onclick="adminTab('inventory',this)">Inventory</button>
-    <button onclick="adminTab('cashier',this)">Cashier / POS</button>
-    <button onclick="adminTab('employees',this)">Employees</button>
-    <button onclick="adminTab('requests',this)">Edit Requests</button>
-    <button onclick="adminTab('reports',this)">Reports</button>
-    <button onclick="logout()" class="logout">Logout</button>
-  </div>
-
-  <div class="container">
-
-    <div id="dashboard" class="adminSection">
-      <div class="grid3">
-        <div class="stat">
-          <span>Products</span>
-          <strong id="statProducts">0</strong>
-        </div>
-        <div class="stat">
-          <span>Total Stock</span>
-          <strong id="statStock">0</strong>
-        </div>
-        <div class="stat">
-          <span>Employees</span>
-          <strong id="statEmployees">0</strong>
-        </div>
-      </div>
-    </div>
-
-    <div id="inventory" class="adminSection hidden">
-
-      <div class="card">
-        <h2>Add Product</h2>
-
-        <label>Product Name</label>
-        <input id="productName" placeholder="Product name">
-
-        <label>Barcode</label>
-        <input id="productBarcode" placeholder="Scan or enter barcode">
-
-        <label>Quantity</label>
-        <input id="productQty" type="number" min="0" placeholder="Quantity">
-
-        <button class="primary green" onclick="addProduct()">Add Product</button>
-        <div id="productMsg"></div>
-      </div>
-
-      <div class="card">
-        <h2>Inventory</h2>
-        <input id="inventorySearch" placeholder="Search name or barcode" oninput="renderProducts()">
-        <div id="productList"></div>
-      </div>
-
-    </div>
-
-    <div id="cashier" class="adminSection hidden">
-      <div class="card">
-        <h2>Cashier / POS</h2>
-
-        <label>Scan Barcode</label>
-        <input id="adminScan" placeholder="Scan barcode" onkeydown="scanEnter(event,'admin')">
-
-        <div id="adminFound"></div>
-      </div>
-
-      <div class="card">
-        <h2>Current Invoice</h2>
-        <div id="adminCart"></div>
-
-        <label>Discount</label>
-        <div class="row">
-          <select id="adminDiscountType" onchange="renderCart('admin')">
-            <option value="none">No Discount</option>
-            <option value="percent">Percentage %</option>
-            <option value="fixed">Fixed USD</option>
-          </select>
-          <input id="adminDiscount" type="number" value="0" min="0" oninput="renderCart('admin')">
-        </div>
-
-        <div id="adminTotal" class="total">$0.00</div>
-        <button class="primary green" onclick="completeSale('admin')">Complete Sale</button>
-        <button class="primary red" onclick="clearCart('admin')">Cancel Current Bill</button>
-      </div>
-    </div>
-
-    <div id="employees" class="adminSection hidden">
-
-      <div class="card">
-        <h2>Create Employee</h2>
-
-        <label>Full Name</label>
-        <input id="empName">
-
-        <label>Email</label>
-        <input id="empEmail" type="email">
-
-        <label>Username</label>
-        <input id="empUsername">
-
-        <label>Password</label>
-        <input id="empPassword" type="password" autocomplete="new-password">
-
-        <label>Phone</label>
-        <input id="empPhone">
-
-        <label>Position</label>
-        <input id="empPosition">
-
-        <label>Notes</label>
-        <textarea id="empNotes"></textarea>
-
-        <button class="primary green" onclick="createEmployee()">Create Employee</button>
-        <div id="empMsg"></div>
-      </div>
-
-      <div class="card">
-        <h2>Employee Info</h2>
-        <div id="employeeList"></div>
-      </div>
-
-    </div>
-
-    <div id="requests" class="adminSection hidden">
-      <div class="card">
-        <h2>Edit Requests</h2>
-        <div id="requestList"></div>
-      </div>
-    </div>
-
-    <div id="reports" class="adminSection hidden">
-      <div class="card">
-        <h2>Sales Reports</h2>
-        <div id="reportContent"></div>
-      </div>
-
-      <div class="card">
-        <h2>Activity Log</h2>
-        <div id="activityContent"></div>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<!-- EMPLOYEE POS -->
-<section id="employeeApp" class="hidden">
-  <div class="topbar">
-    <div class="brand">BEN2ADEM POS</div>
-    <div id="employeeTopName">EMPLOYEE</div>
-  </div>
-
-  <div class="nav">
-    <button class="active">Cashier / POS</button>
-    <button onclick="showEmployeeRequests()">My Edit Requests</button>
-    <button onclick="logout()" class="logout">Logout</button>
-  </div>
-
-  <div class="container">
-
-    <div class="card">
-      <h2>Cashier / POS</h2>
-
-      <label>Scan Barcode</label>
-      <input id="employeeScan" placeholder="Scan barcode" onkeydown="scanEnter(event,'employee')">
-
-      <div id="employeeFound"></div>
-    </div>
-
-    <div class="card">
-      <h2>Current Invoice</h2>
-      <div id="employeeCart"></div>
-
-      <label>Discount</label>
-      <div class="row">
-        <select id="employeeDiscountType" onchange="renderCart('employee')">
-          <option value="none">No Discount</option>
-          <option value="percent">Percentage %</option>
-          <option value="fixed">Fixed USD</option>
-        </select>
-        <input id="employeeDiscount" type="number" value="0" min="0" oninput="renderCart('employee')">
-      </div>
-
-      <div id="employeeTotal" class="total">$0.00</div>
-
-      <button class="primary green" onclick="completeSale('employee')">Complete Sale</button>
-      <button class="primary red" onclick="clearCart('employee')">Cancel Current Bill</button>
-    </div>
-
-    <div class="card">
-      <h2>Request Product Edit</h2>
-
-      <label>Barcode</label>
-      <input id="reqBarcode">
-
-      <label>Requested Change</label>
-      <textarea id="reqChange" placeholder="Example: change price to $5"></textarea>
-
-      <button class="primary blue" onclick="requestEdit()">Send Request To Admin</button>
-      <div id="requestMessage"></div>
-    </div>
-
-  </div>
-</section>
-
+<style id="iphone-responsive">
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;width:100%;min-width:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif}
+body{overflow-x:hidden}
+.site-header{height:auto;min-height:160px;padding:22px 18px 20px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+.brand{font-size:29px;letter-spacing:-1.5px}
+.brand-mark{height:42px}
+.header-title{font-size:20px}
+.header-subtitle{font-size:12px;margin-top:4px}
+.header-right{font-size:12px;gap:5px}
+.header-icon{font-size:20px}
+.wrap{width:100%;padding:0 10px 18px}
+.cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:12px 0}
+.cards .card{min-height:116px;padding:13px 9px;border-radius:12px;display:block}
+.cards .card::before{display:block;font-size:25px;float:none;margin:0 0 6px}
+.cards .num{font-size:27px;margin-top:4px}
+.cards .card div{font-size:11px!important}
+.cards .card .num{font-size:27px!important}
+.main-grid{display:block;margin:0}
+#add,#count,#report,.inventory-all{width:100%;margin:9px 0;border-radius:12px}
+#add h3,#count h3,#report h3,.inventory-all h3{font-size:16px;padding:14px 15px}
+#add form,#count form{display:block;padding:14px}
+#add form>* ,#count form>*{display:block;width:100%;margin-bottom:11px}
+#add .full,#count .full{display:block}
+input{width:100%;font-size:15px;padding:13px}
+button{width:100%;font-size:15px;padding:13px}
+.msg{margin:0 14px 14px;font-size:12px}
+#report .scroll,.inventory-all .scroll{overflow-x:auto;padding:0 8px 10px}
+#report table,.inventory-all table{min-width:650px}
+th,td{font-size:12px;padding:11px 9px}
+footer.system-footer{margin:10px -10px -18px;padding:17px 12px;font-size:12px;line-height:1.7}
+.tabs{display:none}
+#lockBox{width:min(390px,calc(100vw - 30px));padding:24px}
+@media(max-width:430px){
+  .site-header{grid-template-columns:1fr auto;min-height:150px}
+  .brand-mark{display:none}
+  .header-right{grid-column:2;grid-row:1}
+  .header-title,.header-subtitle{grid-column:1/3}
+  .header-title{font-size:19px}
+  .cards .card{min-height:110px}
+  .cards .card:nth-child(3) .num{font-size:24px!important}
+}
+</style>
+
+
+<style id="iphone-standalone">
+html,body{width:100%;min-width:0!important;margin:0;padding:0;overflow-x:hidden;-webkit-text-size-adjust:100%}
+body{background:#f4f7fb}
+.wrap{width:100%!important;max-width:none!important;padding:0 10px 90px!important;margin:0!important}
+.site-header{width:100%;min-height:0!important;height:auto!important;padding:20px 16px!important;display:grid!important;grid-template-columns:1fr auto!important;gap:8px!important}
+.brand{font-size:30px!important}
+.brand-mark{display:none!important}
+.header-title{font-size:20px!important;grid-column:1/-1}
+.header-subtitle{font-size:12px!important;grid-column:1/-1}
+.header-right{grid-column:2;grid-row:1;font-size:12px!important;margin:0!important}
+.cards{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;margin:12px 0!important}
+.cards .card{min-width:0!important;min-height:110px!important;padding:12px 8px!important}
+.cards .card::before{float:none!important;display:block!important;font-size:25px!important;margin:0 0 5px!important}
+.cards .card .num{font-size:26px!important}
+.cards .card div{font-size:10px!important;line-height:1.25!important}
+.main-grid{display:block!important}
+#add,#count,#report,.inventory-all{width:100%!important;margin:9px 0!important}
+#add form,#count form{display:block!important;padding:13px!important}
+#add form>* ,#count form>*{display:block!important;width:100%!important;margin:0 0 10px!important}
+input,button{width:100%!important;min-height:46px!important;font-size:16px!important}
+#report .scroll,.inventory-all .scroll{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}
+#report table,.inventory-all table{min-width:650px!important}
+th,td{font-size:12px!important}
+footer.system-footer{margin:10px -10px -90px!important;padding:17px 10px!important;font-size:12px!important}
+.mobile-nav{display:grid!important}
+
+}
+</style>
+
+
+<style id="iphone-final-fix">
+html,body{width:100%!important;min-width:0!important;max-width:100%!important;margin:0!important;padding:0!important;overflow-x:hidden!important;-webkit-text-size-adjust:100%!important}
+body{background:#f4f7fb!important}
+.wrap{width:100%!important;max-width:100%!important;min-width:0!important;padding:0 10px 90px!important}
+.site-header{width:100%!important;min-width:0!important;height:auto!important;min-height:0!important;padding:20px 16px!important;display:grid!important;grid-template-columns:1fr auto!important}
+.brand{font-size:30px!important}
+.brand-mark{display:none!important}
+.header-title{grid-column:1/-1!important;font-size:20px!important}
+.header-subtitle{grid-column:1/-1!important;font-size:12px!important}
+.header-right{grid-column:2!important;grid-row:1!important;font-size:12px!important;margin:0!important}
+.cards{width:100%!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;margin:12px 0!important}
+.cards .card{min-width:0!important;min-height:110px!important;padding:12px 8px!important}
+.cards .card::before{float:none!important;display:block!important;margin:0 0 5px!important;font-size:25px!important}
+.cards .card .num{font-size:26px!important}
+.main-grid{display:block!important;width:100%!important}
+#add,#count,#report,.inventory-all{width:100%!important;min-width:0!important;margin:9px 0!important}
+#add form,#count form{display:block!important;padding:13px!important}
+#add form>* ,#count form>*{display:block!important;width:100%!important;margin:0 0 10px!important}
+input,button{width:100%!important;min-height:46px!important;font-size:16px!important}
+#report .scroll,.inventory-all .scroll{width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}
+#report table,.inventory-all table{min-width:650px!important}
+.mobile-nav{display:grid!important}
+footer.system-footer{margin-left:-10px!important;margin-right:-10px!important}
+</style>
+
+
+<style id="inventory-actions-style">
+.action-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.action-buttons button.secondary{background:#e9edf1;color:#17202a}
+.action-buttons button.danger{background:#d9363e}
+@media(max-width:700px){.action-buttons{grid-template-columns:1fr}.action-tools{margin-bottom:8px}}
+@media print{body *{visibility:hidden!important}.invoice-print,.invoice-print *{visibility:visible!important}.invoice-print{position:absolute;left:0;top:0;width:100%;padding:24px;background:#fff;color:#000}.mobile-nav{display:none!important}}
+</style>
+
+<style id="pos-invoice-style">
+.invoice-print{display:none}
+@media print{
+ body *{visibility:hidden!important}
+ #invoicePrint,#invoicePrint *{visibility:visible!important}
+ #invoicePrint{display:block!important;position:absolute;left:0;top:0;width:100%;padding:28px 34px;background:#fff;color:#111;font-family:Arial,sans-serif}
+ .inv-head{display:flex;justify-content:space-between;align-items:flex-start}.inv-head h1{font-size:34px;margin:0;color:#071a35}.inv-sub{font-size:15px;font-weight:800;letter-spacing:2px;margin-top:5px}.inv-meta{text-align:right;font-size:13px;line-height:1.7}.inv-line{height:3px;background:#071a35;margin:18px 0}.inv-table{width:100%;border-collapse:collapse}.inv-table th{background:#071a35!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.inv-table th,.inv-table td{padding:10px 8px;border-bottom:1px solid #ddd;text-align:left;font-size:12px}.inv-table th:nth-last-child(-n+3),.inv-table td:nth-last-child(-n+3){text-align:right}.inv-total{margin-left:auto;margin-top:22px;width:310px;border-top:2px solid #071a35;border-bottom:2px solid #071a35;padding:14px 4px;display:flex;justify-content:space-between;font-size:20px}.inv-total strong{font-size:23px}.inv-foot{text-align:center;margin-top:38px;font-size:11px;color:#555;line-height:1.6}
+}
+</style>
+<style id="autosave-edit-style">
+.edit-btn{width:auto!important;min-height:34px!important;padding:7px 11px!important;font-size:13px!important;background:#f0f6ff!important;color:#1769e0!important;border:1px solid #b9d5ff!important}.delete-btn{width:auto!important;min-height:34px!important;padding:7px 11px!important;font-size:13px!important;background:#fff0f0!important;color:#c62828!important;border:1px solid #ffc8c8!important;margin-left:6px}
+.save-status{font-size:11px;color:#d9e3ef;margin-top:4px}
+</style>
+
+<style id="barcode-login-style">
+#barcodeLogin{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#06152d,#0b2a54);display:flex;align-items:center;justify-content:center;padding:20px}
+#barcodeLogin.unlocked{display:none}
+.login-card{width:min(430px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center}
+.login-card h2{margin:8px 0}.login-card p{color:#68717c;margin:5px 0 18px}.login-card input{font-size:20px!important;text-align:center}.login-card .login-msg{min-height:22px;margin-top:10px;color:#d32f2f;font-weight:700}.login-logo{font-size:34px;font-weight:900;color:#071a35}.login-logo span{color:#159df5}
+</style>
+<style>
+.exchange-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.exchange-grid label{display:block;font-weight:700;margin:0 0 6px}.rate-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}.rate-row #rateText{font-size:18px;color:#1769e0;font-weight:800}@media(max-width:650px){.exchange-grid{grid-template-columns:1fr}}
+</style>
+
+<style id="email-auth-style">
+.auth-card{width:min(470px,100%)}.auth-tabs,.email-mode-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}.auth-tab,.mode-btn{background:#e9edf1!important;color:#17202a!important}.auth-tab.active,.mode-btn.active{background:#1769e0!important;color:#fff!important}.auth-pane.hidden,#otpArea.hidden{display:none!important}.auth-pane p{font-size:13px}.auth-pane input{margin-bottom:10px}.otp-meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#68717c;margin:0 2px 10px}.otp-meta #otpTimer{font-weight:700}.otp-meta #resendStatus{color:#d32f2f;font-weight:700}.login-msg.ok{color:#159447!important}
+</style>
+
+<style id="full-pos-style">
+.pos-sale-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:12px;margin-top:12px}.pos-box{background:#fff;border:1px solid #dce4ee;border-radius:12px;overflow:hidden}.pos-box h3{margin:0;background:linear-gradient(100deg,#071a35,#09244a);color:#fff;padding:15px 18px}.pos-pad{padding:14px}.pos-total{font-size:28px;font-weight:800;text-align:right;margin:10px 0}.pos-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.close-sale{background:#14a957!important}.remove-line{background:#d9363e!important;padding:7px 9px!important;min-height:0!important;width:auto!important}.invoice-history{margin-top:12px}.invoice-history .scroll{overflow:auto}.invoice-history table{min-width:720px}.small-btn{width:auto!important;min-height:0!important;padding:8px 10px!important;font-size:12px!important}.empty-cart{text-align:center;color:#68717c;padding:22px}.bill-badge{display:inline-block;background:#eef6ff;color:#1358a6;padding:5px 8px;border-radius:7px;font-weight:700}@media(max-width:760px){.pos-sale-grid{grid-template-columns:1fr}.pos-actions{grid-template-columns:1fr}}
+</style>
+<style id="roles-admin-style">
+.role-chooser{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}.role-btn{min-height:105px!important;font-size:18px!important;border-radius:14px!important}.role-btn.admin-role{background:#071a35!important}.back-role{width:auto!important;background:#eef2f6!important;color:#25364a!important;padding:8px 12px!important;min-height:0!important;margin-bottom:10px}.hidden{display:none!important}.employee-mode #adminLoginTabs,.employee-mode #adminModeRow{display:none!important}.employee-mode #emailPane{display:block!important}.employee-mode #authLoginId{display:block!important}.employee-mode #authEmail,.employee-mode #createFields,.employee-mode #authConfirmPassword{display:none!important}.employee-mode #employeeInlineOtpArea{display:block!important}
+body.employee-session .admin-only{display:none!important}
+.emp-modal{position:fixed;inset:0;background:rgba(4,15,30,.68);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px}.emp-modal.hidden{display:none!important}.emp-card{background:#fff;width:min(760px,100%);max-height:88vh;overflow:auto;border-radius:18px;padding:22px;box-shadow:0 25px 80px rgba(0,0,0,.35)}.emp-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.emp-head button{width:auto!important;min-height:0!important;padding:8px 12px!important}.emp-form{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}.emp-form input{margin:0!important}.emp-form button{grid-column:1/-1}.emp-row{display:grid;grid-template-columns:1.2fr 1fr auto;gap:8px;align-items:center;border-top:1px solid #e6ebf1;padding:10px 0}.emp-row button{width:auto!important;min-height:0!important;padding:7px 10px!important}.role-badge{font-size:11px;font-weight:800;background:#eaf3ff;color:#1769e0;padding:4px 7px;border-radius:20px}@media(max-width:600px){.role-chooser,.emp-form{grid-template-columns:1fr}.emp-row{grid-template-columns:1fr}.emp-row button{width:100%!important}}
+</style>
+
+<style id="workspace-permission-style">
+.workspace-switch{display:flex;gap:10px;margin:14px 0}.workspace-switch button{flex:1;font-size:16px;font-weight:800}.workspace-switch .active{background:#1769e0!important}.employee-session #inventoryWorkspaceBtn{display:none!important}.employee-session .inventory-only,.employee-session #inventory,.employee-session #report,.employee-session #add,.employee-session .inventory-stats,.employee-session .inventory-tabs,.employee-session .invoice-history,.employee-session .exchange-card,.employee-session .action-tools{display:none!important}.employee-session .main-grid{display:block!important}.employee-session #count{display:block!important}.employee-session .admin-only{display:none!important}.employee-session .remove-line{display:none!important}.employee-session .mobile-nav{display:none!important}
+body.workspace-cashier .inventory-only,body.workspace-cashier #inventory,body.workspace-cashier #report,body.workspace-cashier #add,body.workspace-cashier .inventory-stats,body.workspace-cashier .inventory-tabs,body.workspace-cashier .exchange-card,body.workspace-cashier .action-tools{display:none!important}body.workspace-cashier .main-grid{display:block!important}body.workspace-cashier #count{display:block!important}
+body.workspace-inventory #count,body.workspace-inventory .cashier-only{display:none!important}
+.request-edit-btn{margin-top:10px;background:#f59e0b!important;color:#111!important}.approved-edit-btn{margin-top:10px;background:#16a34a!important}.approval-badge{display:inline-block;padding:4px 8px;border-radius:20px;font-size:11px;font-weight:800}.approval-pending{background:#fff3cd;color:#8a6400}.approval-approved{background:#dcfce7;color:#166534}.approval-rejected{background:#fee2e2;color:#991b1b}
+#employeeEditModal{position:fixed;inset:0;background:rgba(4,15,30,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px}#employeeEditModal.hidden{display:none!important}#employeeEditModal .box{background:#fff;width:min(520px,100%);border-radius:18px;padding:22px}#employeeEditModal input,#employeeEditModal textarea{width:100%;margin:6px 0;padding:12px;border:1px solid #ccd5df;border-radius:10px}
+</style>
 <script>
-const SUPABASE_URL = "https://hzmujxcgeqyvgiqxzrkb.supabase.co";
-const SUPABASE_KEY = "sb_publishable_YY1iXLO9OqOlz10VmWGVtg_VukLMrH4";
-
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let products=[];
-let employees=[];
-let currentEmployee=null;
-
-let carts={
-  admin:[],
-  employee:[]
-};
-
-function showPage(id){
-  [
-    "rolePage",
-    "adminLogin",
-    "employeeLogin",
-    "otpPage",
-    "adminApp",
-    "employeeApp"
-  ].forEach(x=>{
-    const e=document.getElementById(x);
-    if(e)e.classList.add("hidden");
-  });
-
-  document.getElementById(id).classList.remove("hidden");
-}
-
-function normalizeBarcode(v){
-  return String(v||"")
-    .replace(/[\r\n\t ]/g,"")
-    .trim();
-}
-
-/* ADMIN LOGIN */
-
-async function adminLogin(){
-  const pass=document.getElementById("adminPassword").value.trim();
-  const err=document.getElementById("adminError");
-
-  err.textContent="";
-
-  if(pass==="BEN2ADEM-2026"){
-    showPage("adminApp");
-    await loadAll();
-    return;
-  }
-
-  err.textContent="Invalid administrator login.";
-}
-
-/* EMPLOYEE LOGIN */
-
-async function employeeLoginStart(e){
-  e.preventDefault();
-
-  const email=document.getElementById("employeeEmail").value.trim().toLowerCase();
-  const password=document.getElementById("employeePassword").value;
-  const error=document.getElementById("employeeError");
-
-  error.textContent="";
-
-  const {data,error:dbError}=await sb
-    .from("employees")
-    .select("*")
-    .eq("email",email)
-    .eq("active",true)
-    .maybeSingle();
-
-  if(dbError || !data){
-    error.textContent="Employee account not found or disabled.";
-    return;
-  }
-
-  /*
-    Password verification + real email OTP
-    will be moved to secure Supabase Edge Function.
-  */
-
-  currentEmployee=data;
-
-  sessionStorage.setItem("pending_employee",JSON.stringify({
-    id:data.id,
-    email:data.email,
-    full_name:data.full_name
-  }));
-
-  showPage("otpPage");
-  setupOtp();
-}
-
-/* OTP */
-
-function setupOtp(){
-  const inputs=[...document.querySelectorAll(".otp")];
-
-  inputs.forEach((input,index)=>{
-    input.value="";
-
-    input.oninput=()=>{
-      input.value=input.value.replace(/\D/g,"").slice(0,1);
-
-      if(input.value && index<inputs.length-1){
-        inputs[index+1].focus();
-      }
-    };
-
-    input.onkeydown=(e)=>{
-      if(e.key==="Backspace" && !input.value && index>0){
-        inputs[index-1].focus();
-      }
-    };
-  });
-
-  if(inputs[0])inputs[0].focus();
-}
-
-function getOtp(){
-  return [...document.querySelectorAll(".otp")]
-    .map(x=>x.value)
-    .join("");
-}
-
-async function verifyOTP(){
-  const code=getOtp();
-  const msg=document.getElementById("otpMessage");
-
-  if(code.length!==6){
-    msg.className="error";
-    msg.textContent="Enter all 6 digits.";
-    return;
-  }
-
-  /*
-    Temporary UI flow.
-    Real OTP verification will be handled securely
-    by Supabase Edge Function.
-  */
-
-  msg.className="success";
-  msg.textContent="Code entered.";
-
-  showPage("employeeApp");
-
-  if(currentEmployee){
-    document.getElementById("employeeTopName").textContent=
-      currentEmployee.full_name || "EMPLOYEE";
-  }
-
-  await loadProducts();
-}
-
-function resendOTP(){
-  const msg=document.getElementById("otpMessage");
-  msg.className="success";
-  msg.textContent="OTP email service will be connected next.";
-}
-
-/* ADMIN NAV */
-
-function adminTab(id,btn){
-  document.querySelectorAll(".adminSection").forEach(x=>x.classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
-
-  document.querySelectorAll("#adminApp .nav button").forEach(x=>x.classList.remove("active"));
-  if(btn)btn.classList.add("active");
-
-  if(id==="inventory")loadProducts();
-  if(id==="employees")loadEmployees();
-  if(id==="requests")loadRequests();
-  if(id==="reports")loadReports();
-}
-
-/* LOAD DATA */
-
-async function loadAll(){
-  await loadProducts();
-  await loadEmployees();
-  await loadRequests();
-  await loadReports();
-}
-
-async function loadProducts(){
-  const {data,error}=await sb
-    .from("products")
-    .select("*")
-    .order("created_at",{ascending:false});
-
-  if(error){
-    console.error(error);
-    return;
-  }
-
-  products=data||[];
-
-  renderProducts();
-
-  document.getElementById("statProducts").textContent=products.length;
-
-  document.getElementById("statStock").textContent=
-    products.reduce((a,p)=>a+Number(p.quantity||0),0);
-}
-
-/* INVENTORY */
-
-async function addProduct(){
-  const name=document.getElementById("productName").value.trim();
-  const barcode=normalizeBarcode(document.getElementById("productBarcode").value);
-  const quantity=Number(document.getElementById("productQty").value||0);
-  const msg=document.getElementById("productMsg");
-
-  msg.textContent="";
-
-  if(!name || !barcode){
-    msg.className="error";
-    msg.textContent="Product name and barcode are required.";
-    return;
-  }
-
-  const {error}=await sb.from("products").insert({
-    name,
-    barcode,
-    quantity
-  });
-
-  if(error){
-    msg.className="error";
-    msg.textContent=error.message;
-    return;
-  }
-
-  msg.className="success";
-  msg.textContent="Product added.";
-
-  document.getElementById("productName").value="";
-  document.getElementById("productBarcode").value="";
-  document.getElementById("productQty").value="";
-
-  await loadProducts();
-}
-
-function renderProducts(){
-  const box=document.getElementById("productList");
-  if(!box)return;
-
-  const search=(document.getElementById("inventorySearch")?.value||"").toLowerCase();
-
-  const list=products.filter(p=>
-    String(p.name||"").toLowerCase().includes(search) ||
-    String(p.barcode||"").includes(search)
-  );
-
-  if(!list.length){
-    box.innerHTML="<p>No products found.</p>";
-    return;
-  }
-
-  box.innerHTML=list.map(p=>`
-    <div class="product">
-      <div class="productTop">
-        <div>
-          <strong>${escapeHtml(p.name)}</strong>
-          <div class="small">${escapeHtml(p.barcode)}</div>
-        </div>
-        <div>
-          <span class="badge">Stock: ${Number(p.quantity||0)}</span>
-        </div>
-      </div>
-
-      <div class="qtyControls">
-        <button onclick="changeStock('${p.id}',-1)">− Qty</button>
-        <strong>${Number(p.quantity||0)}</strong>
-        <button onclick="changeStock('${p.id}',1)">+ Qty</button>
-        <button onclick="deleteProduct('${p.id}')" style="margin-left:auto;background:#ffd5d5">Delete</button>
-      </div>
-    </div>
-  `).join("");
-}
-
-async function changeStock(id,change){
-  const p=products.find(x=>x.id===id);
-  if(!p)return;
-
-  const next=Math.max(0,Number(p.quantity||0)+change);
-
-  const {error}=await sb
-    .from("products")
-    .update({quantity:next})
-    .eq("id",id);
-
-  if(error){
-    alert(error.message);
-    return;
-  }
-
-  await loadProducts();
-}
-
-async function deleteProduct(id){
-  if(!confirm("Delete this product?"))return;
-
-  const {error}=await sb
-    .from("products")
-    .delete()
-    .eq("id",id);
-
-  if(error){
-    alert(error.message);
-    return;
-  }
-
-  await loadProducts();
-}
-
-/* CASHIER */
-
-function scanEnter(e,role){
-  if(e.key!=="Enter")return;
-
-  e.preventDefault();
-
-  const input=document.getElementById(role==="admin"?"adminScan":"employeeScan");
-  const barcode=normalizeBarcode(input.value);
-
-  findProduct(barcode,role);
-
-  input.value="";
-}
-
-async function findProduct(barcode,role){
-  if(!barcode)return;
-
-  let product=products.find(p=>normalizeBarcode(p.barcode)===barcode);
-
-  if(!product){
-    const {data}=await sb
-      .from("products")
-      .select("*")
-      .eq("barcode",barcode)
-      .maybeSingle();
-
-    product=data;
-  }
-
-  const box=document.getElementById(role==="admin"?"adminFound":"employeeFound");
-
-  if(!product){
-    box.innerHTML='<div class="error">Product not found.</div>';
-    return;
-  }
-
-  box.innerHTML=`
-    <div class="product">
-      <strong>${escapeHtml(product.name)}</strong>
-      <div class="small">Barcode: ${escapeHtml(product.barcode)}</div>
-      <div>Stock: ${Number(product.quantity||0)}</div>
-      <div>Price: $${Number(product.price||0).toFixed(2)}</div>
-      <button class="primary green" onclick="addToCart('${role}','${product.id}')">
-        Add To Invoice
-      </button>
-    </div>
-  `;
-}
-
-function addToCart(role,id){
-  const p=products.find(x=>x.id===id);
-  if(!p)return;
-
-  const existing=carts[role].find(x=>x.id===id);
-
-  const cartQty=existing?existing.qty:0;
-
-  if(cartQty>=Number(p.quantity||0)){
-    alert("Not enough stock.");
-    return;
-  }
-
-  if(existing){
-    existing.qty++;
-  }else{
-    carts[role].push({
-      id:p.id,
-      name:p.name,
-      barcode:p.barcode,
-      price:Number(p.price||0),
-      qty:1,
-      stock:Number(p.quantity||0)
-    });
-  }
-
-  renderCart(role);
-}
-
-function cartQty(role,id,change){
-  const item=carts[role].find(x=>x.id===id);
-  if(!item)return;
-
-  if(change>0 && item.qty>=item.stock){
-    alert("Cannot exceed stock.");
-    return;
-  }
-
-  item.qty+=change;
-
-  if(item.qty<=0){
-    carts[role]=carts[role].filter(x=>x.id!==id);
-  }
-
-  renderCart(role);
-}
-
-function renderCart(role){
-  const box=document.getElementById(role+"Cart");
-  const totalBox=document.getElementById(role+"Total");
-
-  if(!box || !totalBox)return;
-
-  const cart=carts[role];
-
-  if(!cart.length){
-    box.innerHTML="<p>Invoice is empty.</p>";
-    totalBox.textContent="$0.00";
-    return;
-  }
-
-  box.innerHTML=cart.map(i=>`
-    <div class="product">
-      <strong>${escapeHtml(i.name)}</strong>
-      <div class="small">${escapeHtml(i.barcode)}</div>
-
-      <div class="qtyControls">
-        <button onclick="cartQty('${role}','${i.id}',-1)">−</button>
-        <strong>${i.qty}</strong>
-        <button onclick="cartQty('${role}','${i.id}',1)">+</button>
-
-        <span style="margin-left:auto">
-          $${(i.price*i.qty).toFixed(2)}
-        </span>
-      </div>
-    </div>
-  `).join("");
-
-  const totals=calculateTotal(role);
-
-  totalBox.innerHTML=
-    `Subtotal: $${totals.subtotal.toFixed(2)}<br>
-     Discount: $${totals.discount.toFixed(2)}<br>
-     <strong>Final: $${totals.final.toFixed(2)}</strong>`;
-}
-
-function calculateTotal(role){
-  const subtotal=carts[role].reduce((a,i)=>a+(i.price*i.qty),0);
-
-  const type=document.getElementById(role+"DiscountType")?.value||"none";
-  const value=Number(document.getElementById(role+"Discount")?.value||0);
-
-  let discount=0;
-
-  if(type==="percent"){
-    discount=subtotal*(Math.min(100,value)/100);
-  }
-
-  if(type==="fixed"){
-    discount=Math.min(subtotal,value);
-  }
-
-  return{
-    subtotal,
-    discount,
-    final:Math.max(0,subtotal-discount)
-  };
-}
-
-async function completeSale(role){
-  if(!carts[role].length){
-    alert("Invoice is empty.");
-    return;
-  }
-
-  const totals=calculateTotal(role);
-
-  const cashier=
-    role==="admin"
-      ?"Administrator"
-      :(currentEmployee?.full_name||currentEmployee?.email||"Employee");
-
-  const {data:invoice,error}=await sb
-    .from("invoices")
-    .insert({
-      cashier,
-      subtotal:totals.subtotal,
-      discount_type:document.getElementById(role+"DiscountType").value,
-      discount_value:Number(document.getElementById(role+"Discount").value||0),
-      final_total:totals.final
-    })
-    .select()
-    .single();
-
-  if(error){
-    alert(error.message);
-    return;
-  }
-
-  for(const item of carts[role]){
-    await sb.from("invoice_items").insert({
-      invoice_id:invoice.id,
-      product_id:item.id,
-      product_name:item.name,
-      barcode:item.barcode,
-      quantity:item.qty,
-      unit_price:item.price,
-      line_total:item.price*item.qty
-    });
-
-    const newQty=Math.max(0,item.stock-item.qty);
-
-    await sb
-      .from("products")
-      .update({quantity:newQty})
-      .eq("id",item.id);
-  }
-
-  alert("Invoice completed successfully.");
-
-  carts[role]=[];
-
-  document.getElementById(role+"Discount").value=0;
-  document.getElementById(role+"DiscountType").value="none";
-
-  renderCart(role);
-
-  await loadProducts();
-}
-
-function clearCart(role){
-  if(!carts[role].length)return;
-
-  if(!confirm("Cancel current bill?"))return;
-
-  carts[role]=[];
-  renderCart(role);
-}
-
-/* EMPLOYEES */
-
-async function loadEmployees(){
-  const {data,error}=await sb
-    .from("employees")
-    .select("*")
-    .order("created_at",{ascending:false});
-
-  if(error){
-    console.error(error);
-    return;
-  }
-
-  employees=data||[];
-
-  const stat=document.getElementById("statEmployees");
-  if(stat)stat.textContent=employees.length;
-
-  renderEmployees();
-}
-
-async function createEmployee(){
-  const employee={
-    full_name:document.getElementById("empName").value.trim(),
-    email:document.getElementById("empEmail").value.trim().toLowerCase(),
-    username:document.getElementById("empUsername").value.trim(),
-    phone:document.getElementById("empPhone").value.trim(),
-    position:document.getElementById("empPosition").value.trim(),
-    notes:document.getElementById("empNotes").value.trim(),
-    password_hash:document.getElementById("empPassword").value,
-    active:true
-  };
-
-  const msg=document.getElementById("empMsg");
-
-  if(!employee.full_name || !employee.email){
-    msg.className="error";
-    msg.textContent="Name and email are required.";
-    return;
-  }
-
-  /*
-    Password hashing must be moved to secure Edge Function.
-    Never use plaintext passwords in production.
-  */
-
-  const {error}=await sb.from("employees").insert(employee);
-
-  if(error){
-    msg.className="error";
-    msg.textContent=error.message;
-    return;
-  }
-
-  msg.className="success";
-  msg.textContent="Employee created.";
-
-  [
-    "empName","empEmail","empUsername","empPassword",
-    "empPhone","empPosition","empNotes"
-  ].forEach(id=>document.getElementById(id).value="");
-
-  await loadEmployees();
-}
-
-function renderEmployees(){
-  const box=document.getElementById("employeeList");
-  if(!box)return;
-
-  if(!employees.length){
-    box.innerHTML="<p>No employees.</p>";
-    return;
-  }
-
-  box.innerHTML=employees.map(e=>`
-    <div class="product">
-      <strong>${escapeHtml(e.full_name||"Employee")}</strong>
-      <div>${escapeHtml(e.email||"")}</div>
-      <div class="small">${escapeHtml(e.position||"")}</div>
-
-      <div style="margin-top:10px">
-        <span class="badge">${e.active?"Active":"Disabled"}</span>
-      </div>
-
-      <div class="row" style="margin-top:10px">
-        <button class="primary blue" onclick="editEmployee('${e.id}')">Edit</button>
-        <button class="primary ${e.active?"red":"green"}"
-          onclick="toggleEmployee('${e.id}',${!e.active})">
-          ${e.active?"Disable":"Enable"}
-        </button>
-      </div>
-    </div>
-  `).join("");
-}
-
-async function toggleEmployee(id,value){
-  const {error}=await sb
-    .from("employees")
-    .update({active:value})
-    .eq("id",id);
-
-  if(error){
-    alert(error.message);
-    return;
-  }
-
-  await loadEmployees();
-}
-
-async function editEmployee(id){
-  const e=employees.find(x=>x.id===id);
-  if(!e)return;
-
-  const name=prompt("Full Name",e.full_name||"");
-  if(name===null)return;
-
-  const phone=prompt("Phone",e.phone||"");
-  if(phone===null)return;
-
-  const position=prompt("Position",e.position||"");
-  if(position===null)return;
-
-  const {error}=await sb
-    .from("employees")
-    .update({
-      full_name:name.trim(),
-      phone:phone.trim(),
-      position:position.trim()
-    })
-    .eq("id",id);
-
-  if(error){
-    alert(error.message);
-    return;
-  }
-
-  await loadEmployees();
-}
-
-/* EDIT REQUESTS */
-
-async function requestEdit(){
-  if(!currentEmployee){
-    alert("Employee session required.");
-    return;
-  }
-
-  const barcode=normalizeBarcode(document.getElementById("reqBarcode").value);
-  const requested_change=document.getElementById("reqChange").value.trim();
-
-  const product=products.find(p=>normalizeBarcode(p.barcode)===barcode);
-
-  const msg=document.getElementById("requestMessage");
-
-  if(!barcode || !requested_change){
-    msg.className="error";
-    msg.textContent="Barcode and requested change are required.";
-    return;
-  }
-
-  const {error}=await sb.from("edit_requests").insert({
-    employee_id:currentEmployee.id,
-    employee_name:currentEmployee.full_name,
-    product_id:product?.id||null,
-    product_name:product?.name||"",
-    barcode,
-    requested_change,
-    status:"pending"
-  });
-
-  if(error){
-    msg.className="error";
-    msg.textContent=error.message;
-    return;
-  }
-
-  msg.className="success";
-  msg.textContent="Request sent to administrator.";
-
-  document.getElementById("reqBarcode").value="";
-  document.getElementById("reqChange").value="";
-}
-
-async function loadRequests(){
-  const {data,error}=await sb
-    .from("edit_requests")
-    .select("*")
-    .order("created_at",{ascending:false});
-
-  const box=document.getElementById("requestList");
-
-  if(error){
-    box.innerHTML=`<div class="error">${escapeHtml(error.message)}</div>`;
-    return;
-  }
-
-  if(!data?.length){
-    box.innerHTML="<p>No edit requests.</p>";
-    return;
-  }
-
-  box.innerHTML=data.map(r=>`
-    <div class="product">
-      <strong>${escapeHtml(r.employee_name||"Employee")}</strong>
-      <div>${escapeHtml(r.product_name||r.barcode||"Product")}</div>
-      <div class="small">${escapeHtml(r.requested_change||"")}</div>
-
-      <div style="margin-top:8px">
-        <span class="badge ${r.status}">
-          ${escapeHtml(r.status||"pending")}
-        </span>
-      </div>
-
-      ${r.status==="pending"?`
-        <div class="row">
-          <button class="primary green"
-            onclick="requestDecision('${r.id}','approved')">Approve</button>
-          <button class="primary red"
-            onclick="requestDecision('${r.id}','rejected')">Reject</button>
-        </div>
-      `:""}
-    </div>
-  `).join("");
-}
-
-async function requestDecision(id,status){
-  const {error}=await sb
-    .from("edit_requests")
-    .update({status})
-    .eq("id",id);
-
-  if(error){
-    alert(error.message);
-    return;
-  }
-
-  await loadRequests();
-}
-
-function showEmployeeRequests(){
-  alert("Employee request history will be connected in the next update.");
-}
-
-/* REPORTS */
-
-async function loadReports(){
-  const report=document.getElementById("reportContent");
-  const activity=document.getElementById("activityContent");
-
-  const {data:invoices}=await sb
-    .from("invoices")
-    .select("*")
-    .order("created_at",{ascending:false})
-    .limit(100);
-
-  const total=(invoices||[]).reduce((a,i)=>a+Number(i.final_total||0),0);
-
-  report.innerHTML=`
-    <div class="grid">
-      <div class="stat">
-        <span>Invoices</span>
-        <strong>${(invoices||[]).length}</strong>
-      </div>
-      <div class="stat">
-        <span>Sales</span>
-        <strong>$${total.toFixed(2)}</strong>
-      </div>
-    </div>
-
-    <div class="tableWrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Invoice</th>
-            <th>Cashier</th>
-            <th>Total</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${(invoices||[]).map(i=>`
-            <tr>
-              <td>${escapeHtml(i.invoice_number||i.id)}</td>
-              <td>${escapeHtml(i.cashier||"")}</td>
-              <td>$${Number(i.final_total||0).toFixed(2)}</td>
-              <td>${new Date(i.created_at).toLocaleString()}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    </div>
-  `;
-
-  const {data:logs}=await sb
-    .from("activity_logs")
-    .select("*")
-    .order("created_at",{ascending:false})
-    .limit(100);
-
-  activity.innerHTML=(logs||[]).length
-    ?logs.map(l=>`
-      <div class="product">
-        <strong>${escapeHtml(l.action||"Activity")}</strong>
-        <div>${escapeHtml(l.employee_name||"")}</div>
-        <div class="small">${new Date(l.created_at).toLocaleString()}</div>
-      </div>
-    `).join("")
-    :"<p>No activity yet.</p>";
-}
-
-/* LOGOUT */
-
-function logout(){
-  currentEmployee=null;
-  sessionStorage.clear();
-
-  document.getElementById("adminPassword").value="";
-  document.getElementById("employeeEmail").value="";
-  document.getElementById("employeePassword").value="";
-
-  carts.admin=[];
-  carts.employee=[];
-
-  showPage("rolePage");
-}
-
-/* HELPERS */
-
-function escapeHtml(value){
-  return String(value??"")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
-
-renderCart("admin");
-renderCart("employee");
+/* BEN2ADEM ONLINE API BRIDGE */
+(()=>{const API="https://hzmujxcgeqyvgiqxzrkb.supabase.co/functions/v1/ben2adem-api";const nativeFetch=window.fetch.bind(window);window.fetch=(input,init)=>{let u=typeof input==='string'?input:input.url;if(u.startsWith('/api/')){u=API+u.slice(4);return nativeFetch(u,init)}return nativeFetch(input,init)};})();
 </script>
+</head>
+<body>
+<div id="barcodeLogin">
+ <div class="login-card auth-card">
+  <div class="login-logo">Ben<span>2</span>adem</div>
+  <h2 id="loginTitle">Choose Account Type</h2>
+  <div id="roleChooser" class="role-chooser">
+   <button type="button" class="role-btn admin-role" onclick="chooseRole('admin')">🛡 Administrator</button>
+   <button type="button" class="role-btn" onclick="chooseRole('employee')">👤 Employee</button>
+  </div>
+  <div id="authArea" class="hidden">
+   <button type="button" class="back-role" onclick="backToRoles()">← Back</button>
+   <div class="auth-tabs" id="adminLoginTabs">
+    <button type="button" id="showBarcode" class="auth-tab active">▥ Barcode Login</button>
+    <button type="button" id="showEmail" class="auth-tab">✉ Account Login</button>
+   </div>
+   <div id="barcodePane" class="auth-pane">
+    <p>Administrator only — scan the admin login barcode.</p>
+    <input id="loginBarcode" inputmode="none" autocomplete="off" placeholder="Scan admin barcode">
+    <div class="login-msg" id="loginMsg"></div>
+   </div>
+   <div id="emailPane" class="auth-pane hidden">
+    <div class="email-mode-row" id="adminModeRow">
+     <button type="button" id="modeLogin" class="mode-btn active">Login</button>
+     <button type="button" id="modeCreate" class="mode-btn">Create Administrator</button>
+    </div>
+    <p id="emailHelp">Login with your email/username and password.</p>
+    <div id="createFields" class="hidden">
+     <input id="authFullName" autocomplete="off" placeholder="Full name">
+     <input id="authUsername" autocomplete="off" placeholder="Username">
+    </div>
+    <input id="authEmail" class="hidden" type="email" autocomplete="off" placeholder="Email address">
+    <input id="authLoginId" autocomplete="off" placeholder="Email or username">
+    <input id="authPassword" type="password" autocomplete="off" placeholder="Password">
+    <input id="authConfirmPassword" class="hidden" type="password" autocomplete="new-password" placeholder="Confirm password">
+    <button type="button" id="accountSubmitBtn">Login</button>
+    <div id="otpVerifyArea" class="hidden" style="margin-top:10px">
+     <input id="authOtp" inputmode="numeric" maxlength="6" placeholder="6-digit code from email">
+     <div class="otp-meta"><span id="otpTimer"></span><span id="resendStatus"></span></div>
+     <button type="button" id="verifyOtpBtn">Verify & Create Administrator</button>
+     <button type="button" id="resendOtpBtn" class="secondary" style="margin-top:8px">Resend Code</button>
+    </div>
+    <div class="login-msg" id="emailLoginMsg"></div>
+    <div id="employeeInlineOtpArea" class="hidden" style="margin-top:14px;padding:14px;border:2px solid #1769e0;border-radius:12px;background:#f4f8ff">
+     <div style="font-weight:800;font-size:16px;margin-bottom:6px">Employee Verification Code</div>
+     <div id="employeeInlineOtpText" style="font-size:13px;margin-bottom:10px;color:#52606d">Enter the 6-digit code sent to your email.</div>
+     <input id="employeeInlineOtp" type="hidden" autocomplete="off">
+     <div id="employeeOtpDigits" style="display:flex;gap:8px;justify-content:center;margin:10px 0 12px">
+      <input class="empOtpDigit" inputmode="numeric" maxlength="1" autocomplete="off" style="width:46px;height:52px;text-align:center;font-size:24px;border:2px solid #1769e0;border-radius:50%;padding:0;margin:0">
+      <input class="empOtpDigit" inputmode="numeric" maxlength="1" autocomplete="off" style="width:46px;height:52px;text-align:center;font-size:24px;border:2px solid #1769e0;border-radius:50%;padding:0;margin:0">
+      <input class="empOtpDigit" inputmode="numeric" maxlength="1" autocomplete="off" style="width:46px;height:52px;text-align:center;font-size:24px;border:2px solid #1769e0;border-radius:50%;padding:0;margin:0">
+      <input class="empOtpDigit" inputmode="numeric" maxlength="1" autocomplete="off" style="width:46px;height:52px;text-align:center;font-size:24px;border:2px solid #1769e0;border-radius:50%;padding:0;margin:0">
+      <input class="empOtpDigit" inputmode="numeric" maxlength="1" autocomplete="off" style="width:46px;height:52px;text-align:center;font-size:24px;border:2px solid #1769e0;border-radius:50%;padding:0;margin:0">
+      <input class="empOtpDigit" inputmode="numeric" maxlength="1" autocomplete="off" style="width:46px;height:52px;text-align:center;font-size:24px;border:2px solid #1769e0;border-radius:50%;padding:0;margin:0">
+     </div>
+     <button type="button" id="employeeInlineVerifyBtn">Verify Code & Login</button>
+     <button type="button" id="employeeInlineCancelBtn" class="secondary" style="margin-top:8px">Cancel</button>
+     <div id="employeeInlineOtpMsg" class="login-msg"></div>
+    </div>
+   </div>
+  </div>
+ </div>
+</div>
 
-</body>
+<div id="employeeOtpModal" class="modal hidden" style="z-index:99999"><div class="modal-box" style="max-width:440px;text-align:center"><h2>Employee Email Verification</h2><p id="employeeOtpText">A 6-digit code was sent to your email.</p><input id="employeeLoginOtp" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="Enter 6-digit code" style="font-size:24px;text-align:center;letter-spacing:8px"><button type="button" id="employeeVerifyLoginBtn" style="margin-top:10px">Verify Code & Login</button><button type="button" id="employeeCancelOtpBtn" class="secondary" style="margin-top:8px">Cancel</button><div id="employeeOtpMsg" class="login-msg"></div></div></div>
+
+<div id="app">
+<div class="wrap">
+
+<div id="top"></div>
+<header class="site-header">
+  <div class="brand">Ben<span class="two">2</span>adem</div>
+  <div class="brand-mark"></div>
+  <div>
+    <div class="header-title">Inventory System</div>
+    <div class="header-subtitle">Products &amp; Quantity Management<div class="save-status" id="saveStatus">Auto Save ON</div></div>
+  </div>
+  <div class="header-right"><span class="header-icon">▣</span> <span data-i18n="inventoryWord">INVENTORY</span> <select id="languageSwitch" onchange="setLanguage(this.value)" style="width:auto;margin:0 8px;padding:7px 10px;border-radius:9px"><option value="en">English</option><option value="ar">العربية</option></select><div class="session-tools"><span class="session-user" id="sessionUser">User: —</span><button type="button" id="employeesBtn" class="logout-btn admin-only" onclick="openEmployees()">Employees</button><button type="button" class="logout-btn admin-only" onclick="openAdminDashboard()">Reports & Notifications</button><button type="button" class="logout-btn" onclick="logoutSystem()">Logout</button></div></div>
+</header>
+<div class="workspace-switch" id="workspaceSwitch"><button id="inventoryWorkspaceBtn" type="button" onclick="showWorkspace('inventory')">📦 INVENTORY</button><button id="cashierWorkspaceBtn" type="button" onclick="showWorkspace('cashier')">🧾 CASHIER</button></div>
+
+<div class="cards inventory-stats">
+<div class="card">Total Items<div class="num" id="total">0</div></div>
+<div class="card">Low Stock Items<div class="num" id="short">0</div></div>
+<div class="card">Remaining Stock<div class="num" id="diff">0</div></div>
+</div>
+<div class="tabs inventory-tabs">
+<a class="tabbtn" href="#add">Add / Update Item</a>
+<a class="tabbtn secondary" href="#count">Inventory Count</a>
+<a class="tabbtn secondary" href="#report">Shortage Report</a>
+</div>
+
+<div class="main-grid">
+<div id="add" class="card">
+<h3>Add / Update Item</h3>
+<form onsubmit="saveItem(event)">
+<input id="barcode" placeholder="Barcode" required>
+<input id="name" placeholder="Item name" required>
+<input id="qty" type="number" min="0" placeholder="System quantity" required>
+<input id="price" type="hidden" value="0">
+<input id="min" type="hidden" value="0">
+<textarea id="notes" class="full" style="display:none"></textarea>
+<button class="full">Save Item</button>
+</form><div class="msg" id="addMsg"></div>
+</div>
+
+<div id="count" class="card">
+<h3>Cashier POS / Barcode Sale</h3>
+<form onsubmit="countItem(event)">
+<input id="scan" placeholder="Scan / enter Barcode" required autofocus autocomplete="off" inputmode="text" oninput="lookupScannedProduct()" onkeydown="handleScanKey(event)">
+<div id="scanProductCard" class="scan-product-card hidden"></div>
+<div id="cashierPriceEditor" class="admin-only hidden" style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="cashierPrice" type="number" min="0" step="0.01" placeholder="Selling price USD" style="margin:0"><button type="button" onclick="saveCashierPrice()" style="width:auto;min-width:150px">Save Price</button></div>
+<div class="sale-qty-control" style="display:grid;grid-template-columns:64px 1fr 64px;gap:8px;align-items:center;margin:10px 0">
+<button type="button" class="secondary" onclick="changeSaleQty(-1)" style="font-size:24px;font-weight:900;padding:8px">−</button>
+<input id="takeQty" type="number" min="1" step="1" value="1" placeholder="Quantity to take" required oninput="normalizeSaleQty();lookupScannedProduct()" style="margin:0;text-align:center;font-size:20px;font-weight:800">
+<button type="button" onclick="changeSaleQty(1)" style="font-size:24px;font-weight:900;padding:8px">+</button>
+</div>
+<button class="full">Take Quantity</button>
+</form><div class="msg" id="countMsg"></div>
+</div>
+
+<div id="report" class="card">
+<h3>Sales / Taken Report</h3>
+<div class="scroll"><table><thead><tr><th>Barcode</th><th>Item</th><th>Original Qty</th><th>Taken</th><th>Remaining</th><th>Status</th></tr></thead><tbody id="reportRows"></tbody></table></div>
+</div>
+</div>
+
+<div id="inventory" class="inventory-all card">
+<h3>All Inventory</h3>
+<div class="scroll"><table><thead><tr><th>Barcode</th><th>Product</th><th>Quantity</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div>
+</div>
+
+<div class="pos-sale-grid cashier-only">
+  <div class="pos-box">
+    <h3>Current Bill / Open Invoice</h3>
+    <div class="pos-pad">
+      <div class="scroll"><table><thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead><tbody id="cartRows"></tbody></table></div>
+    </div>
+  </div>
+  <div class="pos-box">
+    <h3>Checkout</h3>
+    <div class="pos-pad">
+      <div>Current sale: <span class="bill-badge" id="currentSaleNo">OPEN</span></div>
+      <div style="margin:14px 0 8px;padding:12px;border:1px solid #dce4ee;border-radius:10px;background:#f7faff">
+        <label style="font-weight:800;display:block;margin-bottom:7px">Discount</label>
+        <div style="display:grid;grid-template-columns:1fr 110px;gap:8px">
+          <input id="discountValue" type="number" min="0" step="0.01" value="0" placeholder="Enter discount" oninput="renderPOS()">
+          <select id="discountType" onchange="renderPOS()"><option value="percent">%</option><option value="fixed">USD</option></select>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px"><span>Subtotal</span><b id="cartSubtotal">$0.00</b></div>
+      <div style="display:flex;justify-content:space-between;margin-top:7px"><span>Discount</span><b id="cartDiscount">-$0.00</b></div>
+      <div class="pos-total" id="cartTotal">$0.00</div>
+      <div style="text-align:right;margin-top:-7px;margin-bottom:12px" id="cartTotalLbp">0 LBP</div>
+      <div class="pos-actions">
+        <button type="button" class="secondary" onclick="getInvoice()">Preview / Print</button>
+        <button type="button" class="close-sale" onclick="closeInvoice()">✓ Close Invoice & New Sale</button>
+      </div>
+      <div class="msg" id="checkoutMsg" style="margin:10px 0 0"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card invoice-history cashier-only" style="padding:0;overflow:hidden">
+  <h3>Closed Invoices History</h3>
+  <div class="scroll"><table><thead><tr><th>Invoice</th><th>Date & Time</th><th>Cashier</th><th>Items</th><th>Total USD</th><th>Total LBP</th><th>Action</th></tr></thead><tbody id="invoiceHistoryRows"></tbody></table></div>
+</div>
+
+<div class="card exchange-card" style="margin-top:12px;padding:16px">
+  <h3 style="margin:0 0 12px">USD ↔ LBP Auto Exchange</h3>
+  <div class="exchange-grid">
+    <div><label>USD ($)</label><input id="usdConvert" type="number" min="0" step="0.01" placeholder="0.00" oninput="convertFromUSD()"></div>
+    <div><label>LBP (L.L.)</label><input id="lbpConvert" type="number" min="0" step="1" placeholder="0" oninput="convertFromLBP()"></div>
+  </div>
+  <div class="rate-row"><b>Exchange rate:</b> <span id="rateText">Loading...</span> <button type="button" class="secondary" onclick="refreshExchangeRate()" style="width:auto!important;min-height:38px!important;padding:8px 12px!important">↻ Refresh Rate</button></div>
+  <div class="msg" id="rateMsg" style="margin:10px 0 0"></div>
+</div>
+
+<div class="card action-tools" style="margin-top:12px;padding:16px">
+  <h3 style="margin:0 0 12px">Inventory Actions</h3>
+  <div class="action-buttons" style="grid-template-columns:repeat(4,1fr)">
+    <button type="button" class="secondary" onclick="undoLast()">↶ Undo</button>
+    <button type="button" class="danger admin-only" onclick="resetItems()">Reset Items</button>
+    <button type="button" class="danger" onclick="resetSalesOnly()">Cancel Current Bill</button>
+    <button type="button" onclick="getInvoice()">Print Open Bill</button>
+  </div>
+  <div class="msg" id="actionMsg" style="margin:12px 0 0"></div>
+</div>
+<footer class="system-footer">
+  © 2026 Ben2adem System Inventory &nbsp;|&nbsp; Support: +961 81 847 382
+</footer>
+</div>
+
+
+<div id="employeeEditModal" class="hidden"><div class="box"><h2 style="margin-top:0">One-Time Approved Edit</h2><p id="employeeEditInfo" class="msg"></p><input id="eeBarcode" readonly><input id="eeName" placeholder="Item name"><input id="eeQty" type="number" min="0" placeholder="Stock quantity"><input id="eePrice" type="number" min="0" step="0.01" placeholder="Unit price" readonly title="Price can only be changed by Administrator"><input id="eeMin" type="number" min="0" placeholder="Minimum stock"><textarea id="eeNotes" placeholder="Notes"></textarea><button type="button" onclick="saveEmployeeApprovedEdit()">Save One-Time Edit</button><button type="button" class="secondary" onclick="closeEmployeeEdit()">Cancel</button><div id="employeeEditMsg" class="msg"></div></div></div>
+<script>
+const $ = (id) => document.getElementById(id);
+const KEY="company_inventory_v1";
+const META_KEY="company_inventory_meta_v1";
+let items=JSON.parse(localStorage.getItem(KEY)||"null")||[
+{b:"10001",n:"Sample Product A",q:100,m:10,c:96,p:0,updatedAt:new Date().toISOString()},
+{b:"10002",n:"Sample Product B",q:50,m:5,c:50,p:0,updatedAt:new Date().toISOString()},
+{b:"10003",n:"Sample Product C",q:80,m:10,c:83,p:0,updatedAt:new Date().toISOString()}
+];
+items=items.map(x=>({...x,p:+x.p||0,sold:+x.sold||0,initialQ:(x.initialQ==null?+x.q:+x.initialQ),notes:x.notes||"",updatedAt:x.updatedAt||new Date().toISOString()}));
+const CART_KEY="ben2adem_current_sale_v1";
+const INVOICE_KEY="ben2adem_closed_invoices_v1";
+let saleCart=JSON.parse(localStorage.getItem(CART_KEY)||"[]");
+let closedInvoices=JSON.parse(localStorage.getItem(INVOICE_KEY)||"[]");
+let currentDiscountValue=0, currentDiscountType="percent";
+const RATE_KEY="ben2adem_usd_lbp_rate_v1";
+let usdLbpRate=+(localStorage.getItem(RATE_KEY)||89500);
+let convertingCurrency=false;
+let history=[];
+let editingBarcode=null;
+function snapshot(){ history.push(JSON.stringify(items)); if(history.length>50) history.shift(); }
+function setActionMsg(t){ const el=$("actionMsg"); if(el) el.textContent=t; }
+let sharedInventoryReady=false;
+async function syncAdminInventory(){
+  if(currentRole()!=="admin"||!token()) return false;
+  try{await api('/api/inventory/sync',{items});sharedInventoryReady=true;return true}catch(e){console.warn('Inventory sync failed',e);return false}
+}
+async function loadAdminInventory(){
+  if(currentRole()!=="admin"||!token()) return false;
+  try{
+    const r=await fetch('/api/inventory',{headers:{'X-Session-Token':token()},cache:'no-store'}),j=await r.json();
+    if(r.ok && Array.isArray(j.items) && j.items.length){
+      items=j.items.map(x=>({...x,p:+x.p||0,sold:+x.sold||0,initialQ:(x.initialQ==null?+x.q:+x.initialQ),notes:x.notes||"",updatedAt:x.updatedAt||new Date().toISOString()}));
+      localStorage.setItem(KEY,JSON.stringify(items)); sharedInventoryReady=true; render(); return true;
+    }
+  }catch(e){console.warn('Admin inventory load failed',e)}
+  return await syncAdminInventory();
+}
+async function loadSharedInventory(){
+  if(!token()) return false;
+  try{const r=await fetch('/api/inventory',{headers:{'X-Session-Token':token()},cache:'no-store'}),j=await r.json();if(!r.ok)throw Error(j.error||'Could not load inventory');
+    if(Array.isArray(j.items)&&j.items.length){items=j.items.map(x=>({...x,p:+x.p||0,sold:+x.sold||0,initialQ:(x.initialQ==null?+x.q:+x.initialQ),notes:x.notes||"",updatedAt:x.updatedAt||new Date().toISOString()}));localStorage.setItem(KEY,JSON.stringify(items));sharedInventoryReady=true;render();return true}
+    sharedInventoryReady=true;return false;
+  }catch(e){console.warn(e);return false}
+}
+
+
+function persist(){
+  localStorage.setItem(KEY,JSON.stringify(items));
+  localStorage.setItem(CART_KEY,JSON.stringify(saleCart));
+  localStorage.setItem(INVOICE_KEY,JSON.stringify(closedInvoices));
+  const stamp=new Date();
+  localStorage.setItem(META_KEY,JSON.stringify({lastSaved:stamp.toISOString()}));
+  const st=$("saveStatus"); if(st) st.textContent="Auto saved: "+stamp.toLocaleString();
+  if(currentRole()==="admin" && token()){ syncAdminInventory(); }
+}
+
+function render(){
+  let low=0,totalRemaining=0;
+  items.forEach(x=>{ if((+x.q||0) <= (+x.m||0)) low++; totalRemaining += (+x.q||0); });
+  $("total").textContent=items.length;
+  $("short").textContent=low;
+  $("diff").textContent=totalRemaining;
+  $("rows").innerHTML=items.map(x=>`<tr><td>${escapeHtml(x.b)}</td><td>${escapeHtml(x.n)}</td><td><b>${x.q}</b></td><td><button type="button" class="admin-only" onclick="adjustItemQty('${String(x.b).replace(/'/g,"\'")}',-1)">− Qty</button><button type="button" class="admin-only" onclick="adjustItemQty('${String(x.b).replace(/'/g,"\'")}',1)">+ Qty</button><button type="button" class="edit-btn admin-only" onclick="editItem('${String(x.b).replace(/'/g,"\'")}')">✎ Edit</button><button type="button" class="delete-btn admin-only" onclick="deleteItem('${String(x.b).replace(/'/g,"\'")}')">🗑 Delete</button></td></tr>`).join("");
+  $("reportRows").innerHTML=items.map(x=>`<tr><td>${x.b}</td><td>${x.n}</td><td>${x.initialQ??x.q}</td><td>${+x.sold||0}</td><td>${x.q}</td><td>${(+x.q||0)<=0?"OUT OF STOCK":((+x.q||0)<= (+x.m||0)?"LOW STOCK":"IN STOCK")}</td></tr>`).join("");
+  renderPOS();
+  persist();
+}
+
+function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
+function normalizeBarcode(v){
+  let s=String(v??"").trim();
+  // Barcode scanners may send hidden prefix/suffix/control characters.
+  s=s.replace(/[\u0000-\u001F\u007F-\u009F\s]+/g,"");
+  return s;
+}
+function barcodeKey(v){
+  const s=normalizeBarcode(v);
+  // EAN/UPC barcodes are numeric; ignore any scanner formatting around the digits.
+  if(/^\D*\d{6,18}\D*$/.test(s)) return (s.match(/\d+/)||[s])[0];
+  return s.toUpperCase();
+}
+function findByBarcode(v){
+  const k=barcodeKey(v);
+  return items.find(i=>barcodeKey(i.b)===k);
+}
+async function handleScanKey(e){
+  if(e.key==="Enter"){
+    e.preventDefault();
+    if(currentRole()==="employee") await loadSharedInventory();
+    lookupScannedProduct();
+    const b=normalizeBarcode($("scan").value);
+    const x=findByBarcode(b);
+    if(x){ setTimeout(()=>$("takeQty")?.focus(),20); }
+  }
+}
+
+function saveItem(e){
+  e.preventDefault();
+  snapshot();
+  let b=$("barcode").value.trim();
+  let x=items.find(i=>i.b===(editingBarcode||b));
+  if(x){
+    x.n=$("name").value.trim();
+    x.q=+$("qty").value;
+    x.initialQ=(+x.sold||0)+x.q;
+    // Inventory edits change product identity/quantity only. Price stays managed in Cashier POS.
+    x.p=+x.p||0;
+    x.m=+x.m||0;
+    x.notes=x.notes||"";
+    x.b=b; x.updatedAt=new Date().toISOString();
+  }else{
+    items.push({b,n:$("name").value.trim(),q:+$("qty").value,initialQ:+$("qty").value,sold:0,p:0,m:0,notes:"",c:null,updatedAt:new Date().toISOString()});
+  }
+  $("addMsg").textContent=editingBarcode?"Item edited and auto-saved successfully.":"Item saved successfully.";
+  editingBarcode=null; $("barcode").readOnly=false;
+  e.target.reset();
+  render();
+}
+
+function lookupScannedProduct(){
+  const field=$("scan"), card=$("scanProductCard"); if(!field||!card) return;
+  const b=normalizeBarcode(field.value); if(!b){card.classList.add("hidden");card.innerHTML="";$("cashierPriceEditor")?.classList.add("hidden");return;}
+  const x=findByBarcode(b);
+  if(!x){$("cashierPriceEditor")?.classList.add("hidden");card.classList.remove("hidden");card.innerHTML=`<div class="scan-title">Barcode: ${escapeHtml(b)}</div><div style="color:#c62828;font-weight:700">${t("productNotFound")}</div>${currentRole()==='employee'?`<div style=\"margin-top:8px;color:#555\">Shared inventory checked. Ask Administrator to open Inventory once if this product was added in an older build.</div>`:''}${currentRole()==='admin'?`<button type="button" style="margin-top:10px" onclick="addScannedBarcode('${String(b).replace(/'/g,"\\'")}')">+ Add this product</button>`:''}`;return;}
+  card.classList.remove("hidden");
+  const pe=$("cashierPriceEditor"), pi=$("cashierPrice");
+  if(pe){ if(currentRole()==="admin"){pe.classList.remove("hidden"); if(pi)pi.value=(+x.p||0).toFixed(2);} else pe.classList.add("hidden"); }
+  const employeeActions=currentRole()==='employee'?`<button type="button" class="request-edit-btn" onclick="requestItemEdit('${String(x.b).replace(/'/g,"\\'")}')">✎ Request One-Time Edit</button><button type="button" class="secondary" style="margin-top:10px" onclick="checkMyEditApproval('${String(x.b).replace(/'/g,"\\'")}')">Check Edit Approval</button>`:'';
+  card.innerHTML=`<div class="scan-title">${escapeHtml(x.n)}</div><div class="scan-info"><div><b>${t("barcode")}:</b> ${escapeHtml(x.b)}</div><div class="scan-price">$${(+x.p||0).toFixed(2)}</div><div><b>${t("stock")}:</b> ${x.q}</div><div><b>${t("taken")}:</b> ${+x.sold||0}</div><div><b>${t("minimum")}:</b> ${+x.m||0}</div><div><b>${t("notes")}:</b> ${escapeHtml(x.notes||"—")}</div><div><b>${t("qtyTake")}:</b> ${Math.max(1, +(($('takeQty')||{}).value)||1)}</div><div><b>${t("remaining")}:</b> ${Math.max(0,(+x.q||0)-Math.max(1, +(($('takeQty')||{}).value)||1))}</div></div>${employeeActions}`;
+}
+function addScannedBarcode(b){
+  $("barcode").value=b;
+  $("name").value=""; $("qty").value="";
+  editingBarcode=null; $("barcode").readOnly=false;
+  document.getElementById("add").scrollIntoView({behavior:"smooth",block:"start"});
+  setTimeout(()=>$("name")?.focus(),300);
+  $("addMsg").textContent="Barcode filled automatically. Add product info once, then future scans will deduct stock automatically.";
+}
+
+async function saveCashierPrice(){
+  if(currentRole()!=="admin") return;
+  const x=findByBarcode($("scan")?.value||"");
+  if(!x){setActionMsg(t("scanFirst","Scan a product first."));return;}
+  const v=Number($("cashierPrice")?.value);
+  if(!Number.isFinite(v)||v<0){setActionMsg(t("validPrice","Enter a valid selling price."));return;}
+  try{
+    const j=await api('/api/inventory/price',{barcode:x.b,price:v});
+    if(Array.isArray(j.items)) items=j.items.map(a=>({...a,p:+a.p||0,sold:+a.sold||0,initialQ:(a.initialQ==null?+a.q:+a.initialQ),notes:a.notes||""}));
+    localStorage.setItem(KEY,JSON.stringify(items)); render(); lookupScannedProduct();
+    $("countMsg").textContent=`${x.n}: ${t("priceSaved","selling price saved at")} $${v.toFixed(2)}.`;
+  }catch(e){setActionMsg(e.message)}
+}
+
+function normalizeSaleQty(){
+  const el=$("takeQty"); if(!el) return;
+  let v=parseInt(el.value,10); if(!Number.isFinite(v)||v<1) v=1;
+  const x=findByBarcode($("scan")?.value||"");
+  if(x && (+x.q||0)>0) v=Math.min(v,+x.q||0);
+  el.value=v;
+}
+function changeSaleQty(delta){
+  const el=$("takeQty"); if(!el) return;
+  let v=Math.max(1,(parseInt(el.value,10)||1)+delta);
+  const x=findByBarcode($("scan")?.value||"");
+  if(x && (+x.q||0)>0) v=Math.min(v,+x.q||0);
+  el.value=v; lookupScannedProduct();
+}
+
+function countItem(e){
+  e.preventDefault(); snapshot();
+  const b=$("scan").value.replace(/[^0-9A-Za-z._-]/g,"").trim(), x=findByBarcode(b);
+  if(!x){$("countMsg").textContent="Barcode not found. Add the item first.";return;}
+  if((+x.q||0)<=0){$("countMsg").textContent=`${x.n}: OUT OF STOCK`;return;}
+  const take=Math.max(1, parseInt($("takeQty").value,10)||1);
+  if(take>(+x.q||0)){$("countMsg").textContent=`${x.n}: only ${x.q} available. You cannot take ${take}.`;return;}
+  x.q=(+x.q||0)-take; x.sold=(+x.sold||0)+take; x.updatedAt=new Date().toISOString();
+  saleCart.push({b:x.b,n:x.n,p:+x.p||0,qty:take,time:new Date().toISOString()});
+  $("countMsg").textContent=`${x.n}: ${take} taken — ${x.q} remaining.`;
+  e.target.reset(); if($("takeQty")) $("takeQty").value=1; const card=$("scanProductCard"); if(card){card.classList.add("hidden");card.innerHTML="";}
+  render(); setTimeout(()=>$("scan")?.focus(),50);
+}
+
+
+function adjustItemQty(barcode,direction){
+  if(currentRole()!=="admin") return;
+  const x=findByBarcode(barcode); if(!x) return;
+  const label=direction<0?"subtract":"add";
+  const raw=prompt(`How many do you want to ${label} for ${x.n}?`,"1");
+  if(raw===null) return;
+  const amount=Math.max(1,parseInt(raw,10)||0);
+  if(!amount){setActionMsg("Enter a valid quantity.");return;}
+  if(direction<0 && amount>(+x.q||0)){setActionMsg(`${x.n}: only ${x.q||0} available.`);return;}
+  snapshot();
+  x.q=Math.max(0,(+x.q||0)+(direction<0?-amount:amount));
+  x.initialQ=(+x.sold||0)+(+x.q||0);
+  x.updatedAt=new Date().toISOString();
+  render();
+  setActionMsg(`${x.n}: quantity is now ${x.q}.`);
+}
+
+function editItem(barcode){
+  if(currentRole()!=="admin") return;
+  const x=items.find(i=>i.b===barcode); if(!x) return;
+  editingBarcode=barcode;
+  $("barcode").value=x.b; $("name").value=x.n; $("qty").value=x.q;
+  $("addMsg").textContent="Editing "+x.n+" — correct anything and press Save Item.";
+  document.getElementById("add").scrollIntoView({behavior:"smooth",block:"start"});
+  $("name").focus();
+}
+
+function undoLast(){
+  if(!history.length){ setActionMsg("Nothing to undo."); return; }
+  items=JSON.parse(history.pop());
+  render();
+  setActionMsg("Last change undone.");
+}
+
+function deleteItem(barcode){
+  if(currentRole()!=="admin") return;
+  const x=items.find(i=>i.b===barcode); if(!x) return;
+  if(!confirm(`Delete ${x.n} (${x.b}) permanently from inventory?`)) return;
+  snapshot();
+  items=items.filter(i=>i.b!==barcode);
+  if(editingBarcode===barcode){ editingBarcode=null; $("barcode").readOnly=false; $("addMsg").textContent=""; }
+  render();
+  setActionMsg(`${x.n} deleted from inventory.`);
+}
+
+function resetItems(){
+  if(currentRole()!=="admin") return;
+  if(!items.length){ setActionMsg("Inventory is already empty."); return; }
+  if(!confirm("RESET ALL ITEMS? This will delete ALL products from inventory. Closed invoices will stay saved. You can use Undo immediately after if needed.")) return;
+  snapshot();
+  items=[];
+  editingBarcode=null;
+  $("barcode").readOnly=false;
+  render();
+  setActionMsg("All inventory items were reset. Closed invoices were kept. Use Undo if this was a mistake.");
+}
+
+function resetSalesOnly(){
+  if(!saleCart.length){ setActionMsg("Current bill is already empty."); return; }
+  if(!confirm("Cancel the CURRENT bill? Quantities from this open bill will be returned to stock. Closed invoices will stay saved.")) return;
+  snapshot();
+  saleCart.forEach(a=>{ const x=items.find(i=>i.b===a.b); if(x){x.q=(+x.q||0)+(+a.qty||0); x.sold=Math.max(0,(+x.sold||0)-(+a.qty||0));} });
+  saleCart=[];
+  render();
+  setActionMsg("Current bill cancelled. Products were returned to stock. Closed invoices were not deleted.");
+}
+
+function makeInvoiceNo(){
+  const now=new Date();
+  return "INV-"+now.getFullYear()+String(now.getMonth()+1).padStart(2,"0")+String(now.getDate()).padStart(2,"0")+"-"+String(now.getHours()).padStart(2,"0")+String(now.getMinutes()).padStart(2,"0")+String(now.getSeconds()).padStart(2,"0");
+}
+function groupedCart(cart){
+  const grouped={}; cart.forEach(a=>{ if(!grouped[a.b]) grouped[a.b]={...a}; else grouped[a.b].qty+=(+a.qty||0); }); return Object.values(grouped);
+}
+function discountInfo(subtotal){
+  const val=Math.max(0, +(document.getElementById("discountValue")?.value||currentDiscountValue||0));
+  const type=document.getElementById("discountType")?.value||currentDiscountType||"percent";
+  currentDiscountValue=val; currentDiscountType=type;
+  let amount=type==="percent" ? subtotal*Math.min(val,100)/100 : Math.min(val,subtotal);
+  amount=Math.max(0,amount); return {value:val,type,amount,total:Math.max(0,subtotal-amount)};
+}
+function renderPOS(){
+  const cart=groupedCart(saleCart), subtotal=cart.reduce((s,x)=>s+(+x.p||0)*(+x.qty||0),0), d=discountInfo(subtotal), total=d.total;
+  const cr=$("cartRows"); if(cr) cr.innerHTML=cart.length?cart.map(x=>`<tr><td>${escapeHtml(x.n)}</td><td>${x.qty}</td><td>$${(+x.p||0).toFixed(2)}</td><td>$${((+x.p||0)*(+x.qty||0)).toFixed(2)}</td><td><button class="remove-line" onclick="removeCartLine('${String(x.b).replace(/'/g,"\\'")}')">×</button></td></tr>`).join(""):'<tr><td colspan="5" class="empty-cart">No products in the current bill</td></tr>';
+  if($("cartSubtotal")) $("cartSubtotal").textContent="$"+subtotal.toFixed(2);
+  if($("cartDiscount")) $("cartDiscount").textContent="-$"+d.amount.toFixed(2)+(d.type==="percent"?" ("+d.value+"%)":"");
+  if($("cartTotal")) $("cartTotal").textContent="$"+total.toFixed(2);
+  if($("cartTotalLbp")) $("cartTotalLbp").textContent=Math.round(total*usdLbpRate).toLocaleString()+" LBP";
+  if($("currentSaleNo")) $("currentSaleNo").textContent=saleCart.length?"OPEN • "+cart.reduce((s,x)=>s+(+x.qty||0),0)+" pcs":"OPEN";
+  const hr=$("invoiceHistoryRows"); if(hr) hr.innerHTML=closedInvoices.length?[...closedInvoices].reverse().map(inv=>`<tr><td><b>${inv.no}</b></td><td>${new Date(inv.closedAt).toLocaleString()}</td><td>${escapeHtml(inv.cashier||"Unknown")}</td><td>${inv.items.reduce((s,x)=>s+(+x.qty||0),0)}</td><td>$${(+inv.total||0).toFixed(2)}</td><td>${Math.round(+inv.totalLbp||0).toLocaleString()}</td><td><button class="small-btn" onclick="reprintInvoice('${inv.no}')">Print</button></td></tr>`).join(""):'<tr><td colspan="7" class="empty-cart">No closed invoices yet</td></tr>';
+}
+function removeCartLine(barcode){
+  const lines=saleCart.filter(a=>a.b===barcode); if(!lines.length) return;
+  const qty=lines.reduce((s,a)=>s+(+a.qty||0),0), x=items.find(i=>i.b===barcode);
+  if(x){x.q=(+x.q||0)+qty; x.sold=Math.max(0,(+x.sold||0)-qty);}
+  saleCart=saleCart.filter(a=>a.b!==barcode); render(); setActionMsg("Item removed from current bill and quantity returned to stock.");
+}
+function printInvoiceData(inv){
+  const old=document.getElementById("invoicePrint"); if(old) old.remove();
+  const rows=inv.items.map((x,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(x.b)}</td><td>${escapeHtml(x.n)}</td><td>${x.qty}</td><td>$${(+x.p||0).toFixed(2)}</td><td>$${((+x.p||0)*(+x.qty||0)).toFixed(2)}</td></tr>`).join("");
+  const box=document.createElement("div"); box.id="invoicePrint"; box.className="invoice-print";
+  box.innerHTML=`<div class="inv-head"><div><h1>Ben2adem</h1><div class="inv-sub">POS INVOICE</div></div><div class="inv-meta"><b>${inv.no}</b><br>Date: ${new Date(inv.closedAt||Date.now()).toLocaleString()}<br>Cashier: <b>${escapeHtml(inv.cashier||currentSessionUser())}</b></div></div><div class="inv-line"></div><table class="inv-table"><thead><tr><th>#</th><th>Barcode</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>${rows||'<tr><td colspan="6">No products</td></tr>'}</tbody></table><div style="margin-left:auto;margin-top:18px;width:310px;font-size:14px;line-height:1.8"><div style="display:flex;justify-content:space-between"><span>Subtotal</span><b>$${(+inv.subtotal||+inv.total||0).toFixed(2)}</b></div><div style="display:flex;justify-content:space-between"><span>Discount${inv.discountType==="percent"?" ("+(+inv.discountValue||0)+"%)":""}</span><b>-$${(+inv.discountAmount||0).toFixed(2)}</b></div></div><div class="inv-total"><span>GRAND TOTAL</span><strong>$${(+inv.total||0).toFixed(2)}<br><small style="font-size:16px">${Math.round(+inv.totalLbp||0).toLocaleString()} LBP</small></strong></div><div style="text-align:right;margin-top:6px;font-size:12px;color:#666">Rate: $1 = ${Math.round(+inv.rate||usdLbpRate).toLocaleString()} LBP</div><div class="inv-foot">Thank you • Ben2adem POS / Inventory System<br>Support: +961 81 847 382</div>`;
+  document.body.appendChild(box); window.print(); setTimeout(()=>box.remove(),700);
+}
+function getInvoice(){
+  if(!saleCart.length){ setActionMsg("Current bill is empty. Scan products first."); return; }
+  const its=groupedCart(saleCart), subtotal=its.reduce((s,x)=>s+(+x.p||0)*(+x.qty||0),0), d=discountInfo(subtotal), total=d.total;
+  printInvoiceData({no:"OPEN-INVOICE",closedAt:new Date().toISOString(),cashier:currentSessionUser(),items:its,subtotal,discountValue:d.value,discountType:d.type,discountAmount:d.amount,total,totalLbp:total*usdLbpRate,rate:usdLbpRate});
+}
+function closeInvoice(){
+  if(!saleCart.length){ const m=$("checkoutMsg"); if(m)m.textContent="Current bill is empty."; return; }
+  const its=groupedCart(saleCart), subtotal=its.reduce((s,x)=>s+(+x.p||0)*(+x.qty||0),0), d=discountInfo(subtotal), total=d.total;
+  const inv={no:makeInvoiceNo(),closedAt:new Date().toISOString(),cashier:currentSessionUser(),items:its,subtotal,discountValue:d.value,discountType:d.type,discountAmount:d.amount,total,totalLbp:total*usdLbpRate,rate:usdLbpRate};
+  closedInvoices.push(inv); saleCart=[]; currentDiscountValue=0; currentDiscountType="percent"; persist();
+  if($("discountValue")) $("discountValue").value="0"; if($("discountType")) $("discountType").value="percent"; render();
+  const m=$("checkoutMsg"); if(m)m.textContent=inv.no+" closed. A new empty bill is ready.";
+  printInvoiceData(inv); setTimeout(()=>$('scan')?.focus(),100);
+}
+function reprintInvoice(no){ const inv=closedInvoices.find(x=>x.no===no); if(inv) printInvoiceData(inv); }
+
+function updateRateUI(){
+  const el=$("rateText"); if(el) el.textContent="$1 = "+Math.round(usdLbpRate).toLocaleString()+" LBP";
+}
+function convertFromUSD(){
+  if(convertingCurrency) return; convertingCurrency=true;
+  const v=parseFloat($("usdConvert").value);
+  $("lbpConvert").value=Number.isFinite(v)?Math.round(v*usdLbpRate):"";
+  convertingCurrency=false;
+}
+function convertFromLBP(){
+  if(convertingCurrency) return; convertingCurrency=true;
+  const v=parseFloat($("lbpConvert").value);
+  $("usdConvert").value=Number.isFinite(v)?(v/usdLbpRate).toFixed(2):"";
+  convertingCurrency=false;
+}
+async function refreshExchangeRate(){
+  const msg=$("rateMsg"); if(msg) msg.textContent="Updating exchange rate...";
+  try{
+    const r=await fetch("https://open.er-api.com/v6/latest/USD",{cache:"no-store"});
+    if(!r.ok) throw new Error("Rate service unavailable");
+    const data=await r.json();
+    const rate=+(data.rates&&data.rates.LBP);
+    if(!rate || !Number.isFinite(rate)) throw new Error("LBP rate unavailable");
+    usdLbpRate=rate; localStorage.setItem(RATE_KEY,String(rate)); updateRateUI(); convertFromUSD();
+    if(msg) msg.textContent="Live rate updated automatically: "+new Date().toLocaleString();
+  }catch(err){
+    updateRateUI();
+    if(msg) msg.textContent="Could not reach live rate. Using saved rate. Internet is required for automatic updates.";
+  }
+}
+
+function goSection(id,btn){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.scrollIntoView({behavior:"smooth",block:"start"});
+  document.querySelectorAll(".mobile-nav button").forEach(b=>b.classList.remove("active"));
+  if(btn) btn.classList.add("active");
+}
+
+const LANG_KEY="ben2adem_language_v1";
+const I18N={
+ en:{inventoryWord:"INVENTORY",inventory:"Inventory System",cashier:"Cashier POS",employees:"Employees",reports:"Reports & Notifications",logout:"Logout",barcodeSale:"Cashier POS / Barcode Sale",allInventory:"All Inventory",discount:"Discount",subtotal:"Subtotal",grandTotal:"Grand Total",productNotFound:"Product not found.",barcode:"Barcode",stock:"Stock now",taken:"Taken",minimum:"Minimum",notes:"Notes",qtyTake:"Quantity to take",remaining:"Remaining after",savePrice:"Save Price",sellingPrice:"Selling price USD",scan:"Scan / enter Barcode",priceSaved:"selling price saved at",scanFirst:"Scan a product first.",validPrice:"Enter a valid selling price."},
+ ar:{inventoryWord:"المخزون",inventory:"نظام المخزون",cashier:"نظام الكاشير",employees:"الموظفون",reports:"التقارير والإشعارات",logout:"تسجيل الخروج",barcodeSale:"الكاشير / بيع بالباركود",allInventory:"كل المخزون",discount:"الحسم",subtotal:"المجموع قبل الحسم",grandTotal:"المجموع النهائي",productNotFound:"المنتج غير موجود.",barcode:"الباركود",stock:"الكمية الحالية",taken:"المباع",minimum:"الحد الأدنى",notes:"ملاحظات",qtyTake:"الكمية المطلوبة",remaining:"المتبقي",savePrice:"حفظ السعر",sellingPrice:"سعر البيع بالدولار",scan:"امسح / أدخل الباركود",priceSaved:"تم حفظ سعر البيع",scanFirst:"امسح المنتج أولاً.",validPrice:"أدخل سعر بيع صحيح."}
+};
+function currentLang(){return localStorage.getItem(LANG_KEY)||"en"}
+function t(k,f=""){return (I18N[currentLang()]||I18N.en)[k]||f||k}
+function setLanguage(lang){localStorage.setItem(LANG_KEY,lang==='ar'?'ar':'en');applyLanguage()}
+function applyLanguage(){
+ const ar=currentLang()==='ar'; document.documentElement.lang=ar?'ar':'en'; document.documentElement.dir=ar?'rtl':'ltr';
+ const sw=document.getElementById('languageSwitch'); if(sw)sw.value=currentLang();
+ document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n,e.textContent));
+ const map=[['.header-title',currentRole()==='employee'?t('cashier'):t('inventory')],['#employeesBtn',t('employees')]]; map.forEach(([q,v])=>{const e=document.querySelector(q);if(e)e.textContent=v});
+ document.querySelectorAll('.logout-btn').forEach(e=>{if(e.getAttribute('onclick')==='logoutSystem()')e.textContent=t('logout')});
+ const scan=document.getElementById('scan'); if(scan)scan.placeholder=t('scan'); const cp=document.getElementById('cashierPrice');if(cp)cp.placeholder=t('sellingPrice');
+ const sp=document.querySelector('#cashierPriceEditor button');if(sp)sp.textContent=t('savePrice');
+ const heads=[...document.querySelectorAll('h3')]; heads.forEach(e=>{if(e.textContent.trim()==='Cashier POS / Barcode Sale'||e.dataset.kind==='cashier'){e.dataset.kind='cashier';e.textContent=t('barcodeSale')} if(e.textContent.trim()==='All Inventory'||e.dataset.kind==='allinv'){e.dataset.kind='allinv';e.textContent=t('allInventory')}});
+ document.body.style.fontFamily=ar?'Arial, Tahoma, sans-serif':'';
+}
+document.addEventListener("DOMContentLoaded", async()=>{ applyLanguage(); render(); updateRateUI(); refreshExchangeRate(); if(sessionStorage.getItem("ben2adem_logged_in")==="1"&&token()){if(currentRole()==="employee")await loadSharedInventory();else await syncAdminInventory();} });
+</script>
+</div>
+
+<nav class="mobile-nav" aria-label="Inventory navigation">
+  <button type="button" onclick="goSection('top',this)">⌂<span>Dashboard</span></button>
+  <button type="button" onclick="goSection('add',this)">⊕<span>Add / Update</span></button>
+  <button type="button" onclick="goSection('count',this)">▥<span>Count</span></button>
+  <button type="button" onclick="goSection('report',this)">▥<span>Report</span></button>
+  <button type="button" onclick="goSection('inventory',this)">•••<span>More</span></button>
+</nav>
+<style>
+.scan-product-card{background:#eef7ff;border:1px solid #b9dcff;border-radius:10px;padding:12px 14px;margin:0 0 11px!important;color:#17202a}
+.scan-product-card.hidden{display:none!important}
+.scan-product-card .scan-title{font-weight:800;font-size:16px;margin-bottom:7px}
+.scan-product-card .scan-info{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;font-size:13px}
+.scan-product-card .scan-price{font-size:18px;font-weight:800;color:#1769e0}
+.mobile-nav{display:none}
+@media(max-width:700px){
+ .mobile-nav{position:fixed;z-index:9000;left:0;right:0;bottom:0;height:68px;background:#fff;border-top:1px solid #dbe2ea;box-shadow:0 -5px 18px rgba(0,0,0,.08);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom)}
+ .mobile-nav button{appearance:none;-webkit-appearance:none;border:0;border-radius:0;background:#fff!important;color:#566276!important;text-align:center;font-size:22px!important;padding:7px 2px 3px!important;font-weight:700;width:auto!important;min-height:0!important;height:68px!important;cursor:pointer}
+ .mobile-nav button:first-child,.mobile-nav button.active{color:#1769e0!important}
+ .mobile-nav span{display:block;font-size:9px;font-weight:700;margin-top:2px}
+ body{padding-bottom:72px}
+ #top{scroll-margin-top:8px}
+}
+</style>
+
+
+<div id="employeesModal" class="emp-modal hidden">
+ <div class="emp-card">
+  <div class="emp-head"><div><h2 style="margin:0">Create Employee Account</h2><div style="color:#68717c;font-size:13px">Only Administrator can create or delete employee accounts.</div></div><button type="button" onclick="closeEmployees()">✕</button></div>
+  <div class="emp-form">
+   <input id="empName" autocomplete="off" placeholder="Employee full name"><input id="empUsername" autocomplete="off" placeholder="Username">
+   <input id="empEmail" type="email" autocomplete="off" placeholder="Employee email (verification + every login code)"><input id="empPhone" autocomplete="off" placeholder="Phone (optional)">
+   <input id="empPosition" autocomplete="off" placeholder="Position / Job title (optional)"><input id="empNotes" autocomplete="off" placeholder="Notes (optional)">
+   <input id="empPassword" type="password" autocomplete="off" placeholder="Password (min 6 characters)"><input id="empConfirm" type="password" autocomplete="off" placeholder="Confirm password">
+   <button type="button" onclick="createEmployee()">Send Verification Code to Employee</button>
+   <div id="empVerifyArea" class="hidden" style="grid-column:1/-1"><input id="empOtp" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="6-digit code received by employee"><button type="button" onclick="verifyEmployee()">Verify & Activate Employee</button></div>
+  </div>
+  <div id="empMsg" class="login-msg"></div><div id="employeeList"></div>
+ </div>
+</div>
+
+
+<div id="adminDashboardModal" class="emp-modal hidden">
+ <div class="emp-card" style="max-width:950px">
+  <div class="emp-head"><div><h2 style="margin:0">Admin Reports & Notifications</h2><div style="color:#68717c;font-size:13px">Employee activity and sales reports</div></div><button type="button" onclick="closeAdminDashboard()">✕</button></div>
+  <div class="emp-form" style="grid-template-columns:1fr 1fr"><button type="button" onclick="renderAdminReport('week')">Weekly Report</button><button type="button" onclick="renderAdminReport('month')">Monthly Report</button></div>
+  <div id="adminReportBox" style="padding:10px 0"></div>
+  <h3>Employee Edit Requests</h3><div id="editRequestList" style="max-height:320px;overflow:auto"><p>Loading requests...</p></div>
+  <h3>Employee Notifications / Activity</h3><div id="activityList" style="max-height:320px;overflow:auto"></div>
+ </div>
+</div>
+
+<script id="barcode-login-script">
+const DEFAULT_LOGIN_BARCODE="BEN2ADEM-2026";
+let selectedRole=null,authMode="login",pendingCreate=null,pendingEmployee=null,pendingLogin=null,otpTicker=null,otpEnds=0;
+function currentSessionUser(){return sessionStorage.getItem("ben2adem_login_user")||"Unknown User"}
+function currentRole(){return sessionStorage.getItem("ben2adem_role")||"employee"}
+function token(){return sessionStorage.getItem("ben2adem_token")||""}
+function updateSessionUser(){const el=document.getElementById("sessionUser");if(el)el.textContent=(currentRole()==="admin"?"Administrator: ":"Employee: ")+currentSessionUser();document.body.classList.toggle("employee-session",currentRole()!=="admin")}
+async function unlockSystem(user="",role="employee",tok=""){document.getElementById("barcodeLogin")?.classList.add("unlocked");sessionStorage.setItem("ben2adem_logged_in","1");sessionStorage.setItem("ben2adem_role",role);if(user)sessionStorage.setItem("ben2adem_login_user",user);if(tok)sessionStorage.setItem("ben2adem_token",tok);updateSessionUser();showWorkspace(role==='employee'?'cashier':'inventory');if(role==='admin')await loadAdminInventory();else await loadSharedInventory();setTimeout(()=>document.getElementById("scan")?.focus(),100)}
+function clearLoginFields(){["loginBarcode","authFullName","authUsername","authEmail","authLoginId","authPassword","authConfirmPassword","authOtp","employeeInlineOtp","empName","empUsername","empEmail","empPhone","empPosition","empNotes","empPassword","empConfirm","empOtp"].forEach(id=>{const e=document.getElementById(id);if(e)e.value=""});pendingCreate=null;pendingLogin=null;const a=document.getElementById('employeeInlineOtpArea');if(a)a.classList.add('hidden');const sb=document.getElementById('accountSubmitBtn');if(sb)sb.classList.remove('hidden');const li=document.getElementById('authLoginId');if(li)li.readOnly=false;const pw=document.getElementById('authPassword');if(pw)pw.readOnly=false;showEmailMsg("");const m=document.getElementById("loginMsg");if(m)m.textContent="";const em=document.getElementById("empMsg");if(em)em.textContent=""}
+async function logoutSystem(){if(!confirm("Logout from Ben2adem POS?"))return;try{await fetch("/api/auth/logout",{method:"POST",headers:{"X-Session-Token":token()}})}catch(e){}["ben2adem_logged_in","ben2adem_login_user","ben2adem_role","ben2adem_token"].forEach(k=>sessionStorage.removeItem(k));clearLoginFields();document.getElementById("barcodeLogin")?.classList.remove("unlocked");backToRoles();updateSessionUser();setTimeout(clearLoginFields,100)}
+function chooseRole(role){clearLoginFields();if(role==='employee'){window.location.href='/employee-login?v=FINAL-EMAIL-OTP-20260922';return;}selectedRole=role;document.getElementById("roleChooser").classList.add("hidden");document.getElementById("authArea").classList.remove("hidden");document.getElementById("loginTitle").textContent="Administrator Login";document.querySelector('.auth-card').classList.remove('employee-mode');setAuthMode('login');setPane('barcode')}
+function backToRoles(){selectedRole=null;document.getElementById("authArea").classList.add("hidden");document.getElementById("roleChooser").classList.remove("hidden");document.getElementById("loginTitle").textContent="Choose Account Type";document.querySelector('.auth-card').classList.remove('employee-mode');showEmailMsg('')}
+async function api(url,body={}){const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json",...(token()?{"X-Session-Token":token()}:{})},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||"Request failed"),{retryAfter:j.retryAfter||0});return j}
+async function tryBarcodeLogin(){const inp=document.getElementById("loginBarcode"),msg=document.getElementById("loginMsg");if(!inp)return;const code=inp.value.trim();try{const j=await api('/api/auth/barcode',{code});unlockSystem(j.name,'admin',j.token)}catch(e){msg.textContent=e.message;inp.value='';inp.focus()}}
+function setPane(which){if(selectedRole==='employee')which='email';const b=which==="barcode";document.getElementById("barcodePane").classList.toggle("hidden",!b);document.getElementById("emailPane").classList.toggle("hidden",b);document.getElementById("showBarcode")?.classList.toggle("active",b);document.getElementById("showEmail")?.classList.toggle("active",!b);setTimeout(()=>document.getElementById(b?"loginBarcode":"authLoginId")?.focus(),50)}
+function setAuthMode(mode){if(selectedRole==='employee')mode='login';authMode=mode;pendingCreate=null;document.getElementById("otpVerifyArea").classList.add("hidden");const create=mode==="create";document.getElementById("modeLogin")?.classList.toggle("active",!create);document.getElementById("modeCreate")?.classList.toggle("active",create);document.getElementById("createFields").classList.toggle("hidden",!create);document.getElementById("authEmail").classList.toggle("hidden",!create);document.getElementById("authLoginId").classList.toggle("hidden",create);document.getElementById("authConfirmPassword").classList.toggle("hidden",!create);document.getElementById("emailHelp").textContent=create?"Create the Administrator account and verify the email code.":(selectedRole==='employee'?"Use the username and password created by the Administrator.":"Login with your email/username and password.");document.getElementById("accountSubmitBtn").textContent=create?"Send Verification Code":"Login";showEmailMsg("")}
+function showEmailMsg(t,ok=false){const el=document.getElementById("emailLoginMsg");el.textContent=t;el.classList.toggle("ok",ok)}
+function startOtpTimer(sec=30){otpEnds=Date.now()+sec*1000;clearInterval(otpTicker);const tick=()=>{const left=Math.max(0,Math.ceil((otpEnds-Date.now())/1000));document.getElementById("otpTimer").textContent=left?`Code expires in ${left}s`:"Code expired";if(!left)clearInterval(otpTicker)};tick();otpTicker=setInterval(tick,250)}
+function showEmployeeLoginCode(username,maskedEmail,expiresIn){
+ pendingLogin={username};
+ const area=document.getElementById('employeeInlineOtpArea');
+ const input=document.getElementById('employeeInlineOtp');
+ document.getElementById('employeeInlineOtpText').textContent=`Code sent to ${maskedEmail}. Enter the 6-digit code below.`;
+ document.getElementById('employeeInlineOtpMsg').textContent='';
+ input.value='';
+ document.querySelectorAll('.empOtpDigit').forEach(x=>x.value='');
+ area.classList.remove('hidden');
+ document.getElementById('accountSubmitBtn').classList.add('hidden');
+ document.getElementById('authLoginId').readOnly=true;
+ document.getElementById('authPassword').readOnly=true;
+ setTimeout(()=>document.querySelector('.empOtpDigit')?.focus(),50);
+}
+async function verifyEmployeeLoginCode(){
+ const input=document.getElementById('employeeInlineOtp');
+ const code=Array.from(document.querySelectorAll('.empOtpDigit')).map(x=>x.value).join('').trim(),msg=document.getElementById('employeeInlineOtpMsg'); input.value=code;
+ if(!/^\d{6}$/.test(code)){msg.textContent='Enter the 6-digit code.';input.focus();return}
+ if(!pendingLogin){msg.textContent='Login session expired. Start again.';return}
+ try{
+  const j=await api('/api/auth/verify-login-code',{username:pendingLogin.username,code});
+  msg.textContent='Verified. Opening POS...';msg.classList.add('ok');pendingLogin=null;
+  setTimeout(()=>{resetEmployeeOtpUI();unlockSystem(j.name,'employee',j.token)},180);
+ }catch(e){msg.textContent=e.message;input.focus();input.select()}
+}
+function resetEmployeeOtpUI(){
+ pendingLogin=null;
+ const area=document.getElementById('employeeInlineOtpArea');if(area)area.classList.add('hidden');
+ const input=document.getElementById('employeeInlineOtp');if(input)input.value='';document.querySelectorAll('.empOtpDigit').forEach(x=>x.value='');
+ const msg=document.getElementById('employeeInlineOtpMsg');if(msg){msg.textContent='';msg.classList.remove('ok')}
+ const btn=document.getElementById('accountSubmitBtn');if(btn)btn.classList.remove('hidden');
+ const l=document.getElementById('authLoginId');if(l)l.readOnly=false;
+ const pw=document.getElementById('authPassword');if(pw)pw.readOnly=false;
+}
+
+async function submitAccount(){if(authMode==="create"){const name=authFullName.value.trim(),username=authUsername.value.trim(),email=authEmail.value.trim().toLowerCase(),password=authPassword.value,confirm=authConfirmPassword.value;if(!name||!username||!email||!password||!confirm)return showEmailMsg("Fill all account details.");if(password.length<6)return showEmailMsg("Password must be at least 6 characters.");if(password!==confirm)return showEmailMsg("Passwords do not match.");pendingCreate={name,username,email,password};showEmailMsg("Sending verification code...");try{const j=await api('/api/auth/request-code',pendingCreate);otpVerifyArea.classList.remove("hidden");verifyOtpBtn.textContent="Verify & Create Administrator";startOtpTimer(j.expiresIn||120);showEmailMsg(`Code sent to ${email}`,true);authOtp.focus()}catch(e){showEmailMsg(e.message)}}else{const login=authLoginId.value.trim(),password=authPassword.value;if(!login||!password)return showEmailMsg("Enter username/email and password.");showEmailMsg("Logging in...");try{const j=await api('/api/auth/login',{login,password,role:selectedRole});if(j.requiresOtp){sessionStorage.setItem('ben2adem_pending_employee_username',j.username);sessionStorage.setItem('ben2adem_pending_employee_email',j.maskedEmail||'your email');window.location.replace('/employee-verify.html?v=OTP-V7');return}showEmailMsg("Login successful.",true);setTimeout(()=>unlockSystem(j.name||j.username,j.role,j.token),150)}catch(e){showEmailMsg(e.message)}}}
+async function verifyOtp(){const code=authOtp.value.trim();if(!/^\d{6}$/.test(code))return showEmailMsg("Enter the 6-digit code.");if(pendingLogin){try{const j=await api('/api/auth/verify-login-code',{username:pendingLogin.username,code});showEmailMsg("Employee login verified.",true);pendingLogin=null;setTimeout(()=>unlockSystem(j.name,'employee',j.token),200)}catch(e){showEmailMsg(e.message)}return}if(!pendingCreate)return showEmailMsg("Send a verification code first.");try{const j=await api('/api/auth/verify-code',{...pendingCreate,code});showEmailMsg("Administrator account created!",true);setTimeout(()=>unlockSystem(j.name,'admin',j.token),250)}catch(e){showEmailMsg(e.message)}}
+async function resendOtp(){if(!pendingCreate)return;try{const j=await api('/api/auth/request-code',{...pendingCreate,resend:true});startOtpTimer(j.expiresIn||30);showEmailMsg("New code sent.",true)}catch(e){showEmailMsg(e.message)}}
+
+function showWorkspace(which){
+  if(currentRole()==='employee') which='cashier';
+  document.body.classList.toggle('workspace-cashier',which==='cashier');
+  document.body.classList.toggle('workspace-inventory',which==='inventory');
+  $('inventoryWorkspaceBtn')?.classList.toggle('active',which==='inventory');
+  $('cashierWorkspaceBtn')?.classList.toggle('active',which==='cashier');
+  const title=document.querySelector('.header-title'); if(title) title.textContent=which==='cashier'?t('cashier'):t('inventory');
+  if(which==='cashier') setTimeout(()=>$('scan')?.focus(),80);
+}
+async function requestItemEdit(barcode){
+  if(currentRole()!=='employee') return;
+  const reason=prompt('What do you need to edit? Write a short reason for Administrator.'); if(reason===null)return;
+  try{const j=await api('/api/employee/edit-requests',{barcode,reason:reason.trim()||'Item correction requested'});setActionMsg('Edit request sent to Administrator. Wait for approval.');lookupScannedProduct()}catch(e){setActionMsg(e.message)}
+}
+async function checkMyEditApproval(barcode){
+  if(currentRole()!=='employee')return;
+  try{const r=await fetch('/api/employee/edit-requests',{headers:{'X-Session-Token':token()}}),j=await r.json();if(!r.ok)throw Error(j.error||'Request failed');const req=j.requests.find(x=>x.barcode===barcode&&x.status==='approved'&&!x.used);if(!req){setActionMsg('No approved one-time edit for this item yet.');return}openEmployeeApprovedEdit(barcode,req.id)}catch(e){setActionMsg(e.message)}
+}
+let employeeEditRequestId=null;
+function openEmployeeApprovedEdit(barcode,requestId){const x=items.find(i=>i.b===barcode);if(!x)return;employeeEditRequestId=requestId;$('eeBarcode').value=x.b;$('eeName').value=x.n;$('eeQty').value=x.q;$('eePrice').value=+x.p||0;$('eeMin').value=+x.m||0;$('eeNotes').value=x.notes||'';$('employeeEditInfo').textContent='Administrator approved ONE edit for '+x.n+'. After Save, permission ends automatically.';$('employeeEditMsg').textContent='';$('employeeEditModal').classList.remove('hidden')}
+function closeEmployeeEdit(){$('employeeEditModal').classList.add('hidden');employeeEditRequestId=null}
+async function saveEmployeeApprovedEdit(){if(currentRole()!=='employee'||!employeeEditRequestId)return;const barcode=$('eeBarcode').value,x=items.find(i=>i.b===barcode);if(!x)return;try{await api('/api/employee/edit-requests/consume',{requestId:employeeEditRequestId,barcode});snapshot();x.n=$('eeName').value.trim()||x.n;x.q=Math.max(0,+$('eeQty').value||0);x.initialQ=(+x.sold||0)+x.q;x.p=Math.max(0,+$('eePrice').value||0);x.m=Math.max(0,+$('eeMin').value||0);x.notes=$('eeNotes').value.trim();x.updatedAt=new Date().toISOString();render();closeEmployeeEdit();setActionMsg('One-time edit saved. Permission is now closed.');lookupScannedProduct()}catch(e){$('employeeEditMsg').textContent=e.message}}
+async function loadEditRequests(){if(currentRole()!=='admin')return;const box=$('editRequestList');if(!box)return;try{const r=await fetch('/api/admin/edit-requests',{headers:{'X-Session-Token':token()}}),j=await r.json();if(!r.ok)throw Error(j.error||'Request failed');box.innerHTML=j.requests.length?j.requests.map(q=>`<div class="emp-row" style="grid-template-columns:1.4fr .7fr auto"><div><b>${escapeHtml(q.employeeName)}</b> requests edit<br><small>Barcode: ${escapeHtml(q.barcode)} • ${escapeHtml(q.reason||'No reason')}</small><br><small>${new Date(q.createdAt).toLocaleString()}</small></div><span class="approval-badge approval-${q.status}">${q.status.toUpperCase()}${q.used?' / USED':''}</span><div>${q.status==='pending'?`<button onclick="decideEditRequest('${q.id}','approve')">Approve Once</button><button class="danger" onclick="decideEditRequest('${q.id}','reject')">Reject</button>`:''}</div></div>`).join(''):'<p style="color:#68717c">No edit requests.</p>'}catch(e){box.textContent=e.message}}
+async function decideEditRequest(id,decision){try{await api('/api/admin/edit-requests/decision',{id,decision});loadEditRequests()}catch(e){alert(e.message)}}
+
+function openEmployees(){if(currentRole()!=="admin")return;["empName","empUsername","empEmail","empPhone","empPosition","empNotes","empPassword","empConfirm","empOtp"].forEach(id=>{const e=document.getElementById(id);if(e)e.value=""});pendingEmployee=null;empVerifyArea.classList.add('hidden');empMsg.textContent='';employeesModal.classList.remove('hidden');loadEmployees()}
+function closeEmployees(){employeesModal.classList.add('hidden')}
+async function loadEmployees(){try{const r=await fetch('/api/admin/employees',{headers:{'X-Session-Token':token()}}),j=await r.json();if(!r.ok)throw new Error(j.error);employeeList.innerHTML=j.employees.length?j.employees.map(e=>`<div class="emp-row" style="align-items:flex-start"><div><b>${escapeHtml(e.name)}</b><br><small>@${escapeHtml(e.username)} • ${escapeHtml(e.email)}</small><br><small>${escapeHtml(e.position||'No position')} ${e.phone?'• '+escapeHtml(e.phone):''}</small><br><small>Status: ${e.active&&e.verified?'ACTIVE / VERIFIED':'INACTIVE'} • Created: ${e.createdAt?new Date(e.createdAt).toLocaleString():'-'}</small><br><small>Last login: ${e.lastLogin?new Date(e.lastLogin).toLocaleString():'Never'} • Last logout: ${e.lastLogout?new Date(e.lastLogout).toLocaleString():'-'}</small>${e.notes?`<br><small>Notes: ${escapeHtml(e.notes)}</small>`:''}</div><span class="role-badge">EMPLOYEE</span><button type="button" onclick="editEmployee('${String(e.username).replace(/'/g,"\\'")}')">✎ Edit</button><button type="button" class="danger" onclick="deleteEmployee('${String(e.username).replace(/'/g,"\\'")}')">Delete Access</button></div>`).join(''):'<p style="color:#68717c">No employee accounts yet.</p>'}catch(e){empMsg.textContent=e.message}}
+async function createEmployee(){const name=empName.value.trim(),username=empUsername.value.trim(),email=empEmail.value.trim().toLowerCase(),phone=empPhone.value.trim(),position=empPosition.value.trim(),notes=empNotes.value.trim(),password=empPassword.value,confirm=empConfirm.value;if(!name||!username||!email||!password)return empMsg.textContent='Fill name, username, email and password.';if(password.length<6)return empMsg.textContent='Password must be at least 6 characters.';if(password!==confirm)return empMsg.textContent='Passwords do not match.';pendingEmployee={name,username,email,phone,position,notes,password};try{const j=await api('/api/admin/employees/request-create',pendingEmployee);empVerifyArea.classList.remove('hidden');empMsg.textContent=`Code sent to ${email}. Ask employee for the code and enter it here.`;empOtp.focus()}catch(e){empMsg.textContent=e.message}}
+async function verifyEmployee(){if(!pendingEmployee)return empMsg.textContent='Send verification code first.';const code=empOtp.value.trim();if(!/^\d{6}$/.test(code))return empMsg.textContent='Enter the 6-digit code.';try{await api('/api/admin/employees/verify-create',{username:pendingEmployee.username,code});empMsg.textContent='Employee verified and activated successfully.';pendingEmployee=null;empVerifyArea.classList.add('hidden');["empName","empUsername","empEmail","empPhone","empPosition","empNotes","empPassword","empConfirm","empOtp"].forEach(id=>document.getElementById(id).value='');loadEmployees()}catch(e){empMsg.textContent=e.message}}
+
+async function editEmployee(username){
+  try{
+    const r=await fetch('/api/admin/employees',{headers:{'X-Session-Token':token()}}),j=await r.json();
+    if(!r.ok) throw new Error(j.error||'Could not load employee.');
+    const e=j.employees.find(x=>x.username===username); if(!e) throw new Error('Employee not found.');
+    const name=prompt('Full Name:',e.name); if(name===null)return;
+    const email=prompt('Email:',e.email||''); if(email===null)return;
+    const phone=prompt('Phone:',e.phone||''); if(phone===null)return;
+    const position=prompt('Position:',e.position||''); if(position===null)return;
+    const notes=prompt('Notes:',e.notes||''); if(notes===null)return;
+    const password=prompt('New Password (leave empty to keep current password):',''); if(password===null)return;
+    await api('/api/admin/employees/update',{username,name:name.trim(),email:email.trim().toLowerCase(),phone:phone.trim(),position:position.trim(),notes:notes.trim(),password});
+    empMsg.textContent='Employee information updated successfully.'; loadEmployees();
+  }catch(e){empMsg.textContent=e.message}
+}
+async function deleteEmployee(username){if(!confirm(`Delete ${username} from the POS system? Employee will immediately lose access.`))return;try{await api('/api/admin/employees/delete',{username});loadEmployees()}catch(e){empMsg.textContent=e.message}}
+function openAdminDashboard(){if(currentRole()!=='admin')return;adminDashboardModal.classList.remove('hidden');renderAdminReport('week');loadActivity();loadEditRequests();if('Notification'in window&&Notification.permission==='default')Notification.requestPermission()}
+function closeAdminDashboard(){adminDashboardModal.classList.add('hidden')}
+function renderAdminReport(period){const now=new Date(),from=new Date(now);if(period==='week')from.setDate(now.getDate()-7);else from.setMonth(now.getMonth()-1);const inv=closedInvoices.filter(x=>new Date(x.closedAt)>=from),total=inv.reduce((s,x)=>s+(+x.total||0),0),lbp=inv.reduce((s,x)=>s+(+x.totalLbp||0),0),qty=inv.reduce((s,x)=>s+x.items.reduce((a,b)=>a+(+b.qty||0),0),0);const by={};inv.forEach(x=>{const k=x.cashier||'Unknown';by[k]??={n:0,total:0};by[k].n++;by[k].total+=+x.total||0});adminReportBox.innerHTML=`<div class="cards"><div class="card"><b>${period==='week'?'Last 7 Days':'Last Month'}</b><div class="num">${inv.length}</div>Invoices</div><div class="card"><b>Items Sold</b><div class="num">${qty}</div></div><div class="card"><b>Total Sales</b><div class="num">$${total.toFixed(2)}</div>${Math.round(lbp).toLocaleString()} LBP</div></div><div class="scroll"><table><thead><tr><th>Employee</th><th>Invoices</th><th>Sales USD</th></tr></thead><tbody>${Object.entries(by).map(([k,v])=>`<tr><td>${escapeHtml(k)}</td><td>${v.n}</td><td>$${v.total.toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="3">No sales in this period.</td></tr>'}</tbody></table></div>`}
+let lastActivityId='';async function loadActivity(){if(currentRole()!=='admin')return;try{const r=await fetch('/api/admin/activity',{headers:{'X-Session-Token':token()}}),j=await r.json();if(!r.ok)return;activityList.innerHTML=j.activity.map(a=>`<div class="emp-row"><div><b>${escapeHtml(a.name)}</b> ${a.type==='login'?'logged in':'logged out'}<br><small>@${escapeHtml(a.username||'')} • ${new Date(a.at).toLocaleString()}</small></div></div>`).join('')||'<p>No employee activity yet.</p>';const newest=j.activity.find(a=>a.role==='employee');if(newest&&lastActivityId&&newest.id!==lastActivityId&&Notification.permission==='granted')new Notification('Ben2adem Employee Activity',{body:`${newest.name} ${newest.type==='login'?'logged in':'logged out'}`});if(newest)lastActivityId=newest.id}catch(e){}}
+setInterval(()=>{if(currentRole()==='admin'&&sessionStorage.getItem('ben2adem_logged_in')==='1'){loadActivity();loadEditRequests()}},10000);
+setInterval(async()=>{if(sessionStorage.getItem('ben2adem_logged_in')!=='1'||!token())return;try{const r=await fetch('/api/auth/session',{headers:{'X-Session-Token':token()}});if(!r.ok){['ben2adem_logged_in','ben2adem_login_user','ben2adem_role','ben2adem_token'].forEach(k=>sessionStorage.removeItem(k));clearLoginFields();document.getElementById('barcodeLogin')?.classList.remove('unlocked');backToRoles();alert('Your POS access has ended. Please login again.')}}catch(e){}},10000);
+document.addEventListener("DOMContentLoaded",()=>{applyLanguage();if(sessionStorage.getItem("ben2adem_logged_in")==="1"){document.getElementById("barcodeLogin")?.classList.add("unlocked")}else backToRoles();updateSessionUser();loginBarcode?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();tryBarcodeLogin()}});showBarcode?.addEventListener("click",()=>setPane("barcode"));showEmail?.addEventListener("click",()=>setPane("email"));modeLogin?.addEventListener("click",()=>setAuthMode("login"));modeCreate?.addEventListener("click",()=>setAuthMode("create"));accountSubmitBtn?.addEventListener("click",submitAccount);verifyOtpBtn?.addEventListener("click",verifyOtp);resendOtpBtn?.addEventListener("click",resendOtp);authOtp?.addEventListener("keydown",e=>{if(e.key==="Enter")verifyOtp()});document.getElementById('employeeInlineVerifyBtn')?.addEventListener('click',verifyEmployeeLoginCode);document.getElementById('employeeInlineOtp')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();verifyEmployeeLoginCode()}});document.getElementById('employeeInlineCancelBtn')?.addEventListener('click',()=>{resetEmployeeOtpUI();clearLoginFields();setTimeout(()=>document.getElementById('authLoginId')?.focus(),50)});document.querySelectorAll('.empOtpDigit').forEach((el,i,arr)=>{el.addEventListener('input',()=>{el.value=el.value.replace(/\D/g,'').slice(0,1);if(el.value&&i<arr.length-1)arr[i+1].focus()});el.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!el.value&&i>0)arr[i-1].focus();if(e.key==='Enter')verifyEmployeeLoginCode()});el.addEventListener('paste',e=>{const d=(e.clipboardData.getData('text')||'').replace(/\D/g,'').slice(0,6);if(d){e.preventDefault();d.split('').forEach((v,j)=>{if(arr[j])arr[j].value=v});arr[Math.min(d.length,6)-1]?.focus()}})})});
+
+window.addEventListener('pageshow',()=>{if(sessionStorage.getItem("ben2adem_logged_in")!=="1")setTimeout(clearLoginFields,50)});
+</script>
+<div style="position:fixed;right:8px;bottom:8px;font:11px Arial;color:#7f8c9a;z-index:100000">Build SHARED-PRODUCTS-QTY-V12</div></body>
 </html>
